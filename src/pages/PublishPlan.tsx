@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button, Drawer, Form, InputNumber, DatePicker, Space, List, Card, Modal, message, Input, Radio, Tooltip, Calendar, Tabs, Avatar, Select, Statistic, Row, Col } from 'antd';
-import { PlusOutlined, DeleteOutlined, QuestionCircleOutlined, LoadingOutlined, CalendarOutlined, RobotOutlined } from '@ant-design/icons';
+import { PlusOutlined, DeleteOutlined, QuestionCircleOutlined, LoadingOutlined, CalendarOutlined, RobotOutlined, LeftOutlined, RightOutlined, EyeOutlined, ShareAltOutlined, HeartOutlined, MessageOutlined, StarOutlined, EllipsisOutlined } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 
@@ -1357,7 +1357,20 @@ const PublishPlan: React.FC = () => {
       </Drawer>
 
       <Modal
-        title="编辑笔记"
+        title={
+          <div style={{ 
+            borderBottom: '1px solid #f0f0f0',
+            padding: '16px 24px',
+            margin: '-20px -24px 20px',
+          }}>
+            <Space>
+              <span style={{ fontSize: '18px', fontWeight: 'bold' }}>编辑笔记</span>
+              <span style={{ fontSize: '14px', color: '#999' }}>
+                {currentNoteIndex + 1} / {selectedPlan?.notes.length}
+              </span>
+            </Space>
+          </div>
+        }
         open={!!editingNote}
         onCancel={() => setEditingNote(null)}
         onOk={() => {
@@ -1365,44 +1378,73 @@ const PublishPlan: React.FC = () => {
             handleEditSubmit(editingNote);
           }
         }}
-        width={800}
+        width={1000}
         style={{ top: 20 }}
         footer={
-          <Space>
-            <Button
-              disabled={currentNoteIndex <= 0}
-              onClick={handlePrevNote}
-            >
-              上一篇
-            </Button>
-            <Button
-              disabled={!selectedPlan || currentNoteIndex >= selectedPlan.notes.length - 1}
-              onClick={handleNextNote}
-            >
-              下一篇
-            </Button>
-          </Space>
+          <div style={{
+            borderTop: '1px solid #f0f0f0',
+            padding: '16px 0',
+            marginTop: '20px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <Space>
+              <Button
+                disabled={currentNoteIndex <= 0}
+                onClick={handlePrevNote}
+                icon={<LeftOutlined />}
+              >
+                上一篇
+              </Button>
+              <Button
+                disabled={!selectedPlan || currentNoteIndex >= selectedPlan.notes.length - 1}
+                onClick={handleNextNote}
+                icon={<RightOutlined />}
+              >
+                下一篇
+              </Button>
+            </Space>
+            <Space>
+              <Button onClick={() => setEditingNote(null)}>取消</Button>
+              <Button type="primary" onClick={() => editingNote && handleEditSubmit(editingNote)}>
+                保存
+              </Button>
+            </Space>
+          </div>
         }
+        bodyStyle={{ padding: '0 24px' }}
       >
         {editingNote && (
           <div style={{ display: 'flex', gap: 24 }}>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: '0 0 45%' }}>
               <Form layout="vertical">
-                <Form.Item label="标题">
+                <Form.Item 
+                  label={<span style={{ fontSize: '15px', fontWeight: 500 }}>标题</span>}
+                  style={{ marginBottom: '20px' }}
+                >
                   <Input
                     value={editingNote.title}
                     onChange={e => setEditingNote({ ...editingNote, title: e.target.value })}
+                    placeholder="请输入笔记标题"
+                    style={{ height: '40px', fontSize: '14px' }}
                   />
                 </Form.Item>
-                <Form.Item label="正文">
+                <Form.Item 
+                  label={<span style={{ fontSize: '15px', fontWeight: 500 }}>正文</span>}
+                  style={{ marginBottom: '20px' }}
+                >
                   <Space direction="vertical" style={{ width: '100%' }}>
                     <Input.TextArea
                       value={editingNote.content}
                       onChange={e => setEditingNote({ ...editingNote, content: e.target.value })}
-                      rows={4}
+                      placeholder="请输入笔记正文"
+                      rows={6}
+                      style={{ fontSize: '14px' }}
                     />
                     <Button
                       icon={<RobotOutlined />}
+                      style={{ width: '100%', height: '40px' }}
                       onClick={() => {
                         Modal.confirm({
                           title: 'AI调整内容',
@@ -1419,7 +1461,6 @@ const PublishPlan: React.FC = () => {
                               message.error('请输入调整方向');
                               return;
                             }
-                            // 这里模拟AI调整内容的效果
                             const adjustedContent = `${editingNote.content}\n\n[根据"${direction}"的方向调整后的内容]`;
                             setEditingNote({ ...editingNote, content: adjustedContent });
                             message.success('内容调整完成！');
@@ -1431,22 +1472,45 @@ const PublishPlan: React.FC = () => {
                     </Button>
                   </Space>
                 </Form.Item>
-                <Form.Item label="图片URL">
+                <Form.Item 
+                  label={<span style={{ fontSize: '15px', fontWeight: 500 }}>图片</span>}
+                  style={{ marginBottom: '20px' }}
+                >
                   <Button
                     onClick={() => {
                       Modal.info({
                         title: '选择图片',
                         width: 800,
                         content: (
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+                          <div style={{ 
+                            display: 'grid', 
+                            gridTemplateColumns: 'repeat(4, 1fr)', 
+                            gap: 12,
+                            padding: '12px 0'
+                          }}>
                             {Array(12).fill(null).map((_, index) => (
                               <div
                                 key={index}
                                 style={{
-                                  border: editingNote.imageUrl === `https://picsum.photos/400/400?random=${index}` ? '2px solid #1890ff' : '1px solid #d9d9d9',
-                                  borderRadius: 4,
+                                  border: editingNote.imageUrl === `https://picsum.photos/400/400?random=${index}` 
+                                    ? '2px solid #1890ff' 
+                                    : '1px solid #f0f0f0',
+                                  borderRadius: 8,
                                   padding: 4,
-                                  cursor: 'pointer'
+                                  cursor: 'pointer',
+                                  transition: 'all 0.3s'
+                                }}
+                                onMouseEnter={(e) => {
+                                  const target = e.currentTarget;
+                                  target.style.borderColor = '#1890ff';
+                                  target.style.transform = 'scale(1.02)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  const target = e.currentTarget;
+                                  if (editingNote.imageUrl !== `https://picsum.photos/400/400?random=${index}`) {
+                                    target.style.borderColor = '#f0f0f0';
+                                  }
+                                  target.style.transform = 'scale(1)';
                                 }}
                                 onClick={() => {
                                   const imageUrl = `https://picsum.photos/400/400?random=${index}`;
@@ -1456,7 +1520,12 @@ const PublishPlan: React.FC = () => {
                                 <img
                                   src={`https://picsum.photos/400/400?random=${index}`}
                                   alt={`素材 ${index + 1}`}
-                                  style={{ width: '100%', height: 150, objectFit: 'cover' }}
+                                  style={{ 
+                                    width: '100%', 
+                                    height: 150, 
+                                    objectFit: 'cover',
+                                    borderRadius: 4
+                                  }}
                                 />
                               </div>
                             ))}
@@ -1465,12 +1534,15 @@ const PublishPlan: React.FC = () => {
                         onOk() {}
                       });
                     }}
-                    style={{ width: '100%' }}
+                    style={{ width: '100%', height: '40px' }}
                   >
                     从素材库选择图片
                   </Button>
                 </Form.Item>
-                <Form.Item label="标签">
+                <Form.Item 
+                  label={<span style={{ fontSize: '15px', fontWeight: 500 }}>标签</span>}
+                  style={{ marginBottom: '20px' }}
+                >
                   <Input
                     value={editingNote.tags?.join(', ')}
                     onChange={e => setEditingNote({
@@ -1478,48 +1550,205 @@ const PublishPlan: React.FC = () => {
                       tags: e.target.value.split(',').map(tag => tag.trim()).filter(Boolean)
                     })}
                     placeholder="使用逗号分隔多个标签"
+                    style={{ height: '40px', fontSize: '14px' }}
                   />
                 </Form.Item>
               </Form>
             </div>
-            <div style={{ flex: 1 }}>
-              <h3>预览效果</h3>
+            <div style={{ flex: '0 0 55%' }}>
               <div style={{ 
-                backgroundColor: '#fff',
-                borderRadius: 8,
-                overflow: 'hidden',
-                border: '1px solid #f0f0f0'
+                backgroundColor: '#fafafa',
+                borderRadius: 12,
+                padding: 20,
+                height: '100%'
               }}>
-                <img
-                  src={editingNote.imageUrl}
-                  alt={editingNote.title}
-                  style={{
-                    width: '100%',
-                    height: 300,
-                    objectFit: 'cover'
-                  }}
-                />
-                <div style={{ padding: 16 }}>
-                  <h3 style={{ fontSize: 18, marginBottom: 8 }}>{editingNote.title}</h3>
-                  <p style={{ fontSize: 14, color: '#666', marginBottom: 12 }}>{editingNote.content}</p>
-                  {editingNote.tags && (
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      {editingNote.tags.map(tag => (
-                        <span
-                          key={tag}
-                          style={{
-                            backgroundColor: '#f7f7f7',
-                            padding: '4px 8px',
-                            borderRadius: 4,
-                            fontSize: 12,
-                            color: '#666'
-                          }}
-                        >
-                          #{tag}
-                        </span>
-                      ))}
+                {/* 手机外壳 */}
+                <div style={{
+                  width: '320px',
+                  margin: '0 auto',
+                  backgroundColor: '#000',
+                  borderRadius: '36px',
+                  padding: '12px',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                }}>
+                  {/* 手机内容区 */}
+                  <div style={{
+                    backgroundColor: '#fff',
+                    height: '520px',
+                    overflow: 'hidden',
+                    position: 'relative',
+                    borderRadius: '24px',
+                  }}>
+                    {/* 笔记内容 */}
+                    <div style={{
+                      height: '100%',
+                      overflow: 'auto'
+                    }}>
+                      <div style={{
+                        backgroundColor: '#fff',
+                        borderRadius: 0
+                      }}>
+                        {/* 图片区域 */}
+                        <div style={{ position: 'relative' }}>
+                          <img
+                            src={editingNote.imageUrl}
+                            alt={editingNote.title}
+                            style={{
+                              width: '100%',
+                              height: '375px',
+                              objectFit: 'cover'
+                            }}
+                          />
+                          {/* 返回按钮 */}
+                          <div style={{
+                            position: 'absolute',
+                            top: 12,
+                            left: 12,
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '50%',
+                            backgroundColor: 'rgba(0,0,0,0.3)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#fff'
+                          }}>
+                            <LeftOutlined />
+                          </div>
+                          {/* 分享按钮 */}
+                          <div style={{
+                            position: 'absolute',
+                            top: 12,
+                            right: 12,
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '50%',
+                            backgroundColor: 'rgba(0,0,0,0.3)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#fff'
+                          }}>
+                            <ShareAltOutlined />
+                          </div>
+                        </div>
+                        {/* 内容区域 */}
+                        <div style={{ padding: '16px' }}>
+                          {/* 用户信息 */}
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            marginBottom: 12
+                          }}>
+                            <Avatar
+                              size={36}
+                              src={mockAccounts[0].avatar}
+                              style={{ marginRight: 8 }}
+                            />
+                            <div>
+                              <div style={{ 
+                                fontSize: 14,
+                                fontWeight: 600,
+                                color: '#333',
+                                marginBottom: 2
+                              }}>
+                                {mockAccounts[0].nickname}
+                              </div>
+                              <div style={{
+                                fontSize: 12,
+                                color: '#999'
+                              }}>
+                                IP 归属地：上海
+                              </div>
+                            </div>
+                            <Button
+                              type="primary"
+                              size="small"
+                              style={{
+                                marginLeft: 'auto',
+                                borderRadius: '16px',
+                                fontSize: '12px',
+                                height: '28px'
+                              }}
+                            >
+                              关注
+                            </Button>
+                          </div>
+                          {/* 标题和正文 */}
+                          <h3 style={{ 
+                            fontSize: 16, 
+                            fontWeight: 600,
+                            color: '#333',
+                            marginBottom: 8,
+                            lineHeight: 1.5
+                          }}>
+                            {editingNote.title || '请输入标题'}
+                          </h3>
+                          <p style={{ 
+                            fontSize: 14, 
+                            color: '#666', 
+                            marginBottom: 12,
+                            lineHeight: 1.6,
+                            whiteSpace: 'pre-wrap'
+                          }}>
+                            {editingNote.content || '请输入正文内容'}
+                          </p>
+                          {/* 标签 */}
+                          {editingNote.tags && editingNote.tags.length > 0 && (
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+                              {editingNote.tags.map(tag => (
+                                <span
+                                  key={tag}
+                                  style={{
+                                    color: '#999',
+                                    fontSize: 12
+                                  }}
+                                >
+                                  #{tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          {/* 互动栏 */}
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            borderTop: '1px solid #f5f5f5',
+                            paddingTop: 12
+                          }}>
+                            <Space size={24}>
+                              <Space>
+                                <HeartOutlined style={{ fontSize: 16 }} />
+                                <span style={{ fontSize: 12, color: '#999' }}>赞</span>
+                              </Space>
+                              <Space>
+                                <MessageOutlined style={{ fontSize: 16 }} />
+                                <span style={{ fontSize: 12, color: '#999' }}>评论</span>
+                              </Space>
+                              <Space>
+                                <StarOutlined style={{ fontSize: 16 }} />
+                                <span style={{ fontSize: 12, color: '#999' }}>收藏</span>
+                              </Space>
+                            </Space>
+                            <Button
+                              type="text"
+                              icon={<EllipsisOutlined />}
+                              style={{ color: '#999' }}
+                            />
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  )}
+                  </div>
+                  {/* 手机底部黑条 */}
+                  <div style={{
+                    height: '4px',
+                    width: '120px',
+                    backgroundColor: '#000',
+                    margin: '8px auto 0',
+                    borderRadius: '2px'
+                  }} />
                 </div>
               </div>
             </div>
