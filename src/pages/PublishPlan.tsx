@@ -92,6 +92,7 @@ const PublishPlan: React.FC = () => {
   const [demoPlans, setDemoPlans] = useState<Plan[]>([]);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [currentNoteIndex, setCurrentNoteIndex] = useState<number>(-1);
+  const [aiAssistantVisible, setAiAssistantVisible] = useState(false);
 
   const showDrawer = () => {
     setDrawerVisible(true);
@@ -396,6 +397,98 @@ const PublishPlan: React.FC = () => {
           </List.Item>
         )}
       />
+
+      {/* 品牌之声模块 */}
+      <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px', marginTop: '24px' }}>品牌之声</h2>
+      <div style={{ marginBottom: 16 }}>
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ color: '#666', fontSize: '14px' }}>
+              添加几段最能代表你风格的文案，AI 将学习并模仿你的语气，让每篇笔记都充满你的个性
+            </div>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                Modal.confirm({
+                  title: '添加品牌文案',
+                  width: 600,
+                  content: (
+                    <Form layout="vertical">
+                      <Form.Item
+                        name="content"
+                        label="文案内容"
+                        rules={[{ required: true, message: '请输入文案内容' }]}
+                      >
+                        <Input.TextArea
+                          placeholder="输入一段最能代表你风格的文案..."
+                          rows={4}
+                        />
+                      </Form.Item>
+                      <Form.Item
+                        name="tags"
+                        label="文案特点"
+                      >
+                        <Select
+                          mode="multiple"
+                          placeholder="选择这段文案的特点"
+                          options={[
+                            { label: '俏皮可爱', value: 'cute' },
+                            { label: '优雅知性', value: 'elegant' },
+                            { label: '专业严谨', value: 'professional' },
+                            { label: '亲切自然', value: 'natural' },
+                            { label: '幽默诙谐', value: 'humorous' }
+                          ]}
+                        />
+                      </Form.Item>
+                    </Form>
+                  ),
+                  onOk: () => {
+                    message.success('文案添加成功！');
+                  }
+                });
+              }}
+            >
+              添加文案
+            </Button>
+          </div>
+          
+          <List
+            itemLayout="vertical"
+            dataSource={[
+              {
+                id: '1',
+                content: '姐妹们！这件风衣真的绝了！穿上去感觉自己就是行走的香奈儿～不过最让我惊喜的是这个小心机：袖口居然暗藏了一圈小珍珠🤫 低调又高级～ 而且面料是可以揉成一团都不会皱的那种！上班通勤约会都能穿，绝对是今年春天的股票，建议买入！'
+              },
+              {
+                id: '2',
+                content: '「生活不是选择题，而是一道填空题。」\n\n今天想和你分享的这个小众香水，就像是为都市生活填上的一抹诗意。\n前调是晨露般的柑橘，中调藏着一片薰衣草田，后调却意外地温暖，像是被阳光晒过的羊毛衫。\n\n没有人规定都市生活该是什么样，我们都在用自己的方式，填写着属于自己的答案。'
+              },
+              {
+                id: '3',
+                content: '最近疯狂被这个小眼影盘种草！！！\n\n不是我说，这个眼影盘绝对是为手残党量身定制的！！\n一个色号就能化出高级感，而且每个色号都标注了使用顺序和部位，连我这种手残都能化出新手咖啡店店主的感觉！！\n\n重点是！！它的壳子是磁吸的！！拿在手上的时候发出"咔哒"一声，爽到起飞！！\n\n姐妹们快去给我买爆它！！'
+              }
+            ]}
+            renderItem={item => (
+              <List.Item
+                style={{
+                  backgroundColor: '#fff',
+                  padding: '16px',
+                  borderRadius: '8px',
+                  marginBottom: '16px'
+                }}
+                actions={[
+                  <Button type="text" key="edit">编辑</Button>,
+                  <Button type="text" danger key="delete">删除</Button>
+                ]}
+              >
+                <div style={{ whiteSpace: 'pre-wrap' }}>{item.content}</div>
+              </List.Item>
+            )}
+          />
+        </Space>
+      </div>
+
       <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px', marginTop: '24px' }}>偏好设置</h2>
       <div style={{ marginBottom: 16 }}>
         <Button
@@ -518,15 +611,121 @@ const PublishPlan: React.FC = () => {
     ) : null;
   };
 
+  // 模拟的对话历史
+  const dialogHistory = [
+    {
+      id: '1',
+      type: 'user',
+      content: '帮我把上周发的那篇"春日穿搭分享"再发一遍，但是要换个角度写',
+      time: '2024-03-18 10:30'
+    },
+    {
+      id: '2',
+      type: 'assistant',
+      content: `好的，我来帮你处理这个需求。让我先查看一下上周的内容...
+
+分析结果：
+1. 找到原文：《春日穿搭分享》，发布于 3月15日
+2. 核心要点：日常通勤穿搭、舒适度、时尚感
+3. 互动数据：获得2451次浏览，167个赞
+
+我的建议是从以下几个新角度改写：
+1. 将视角从"搭配展示"转变为"购物清单"
+2. 加入具体场景（如约会、面试）的搭配建议
+3. 结合最近的天气变化，增加应季性
+
+我已经开始生成新的内容，预计2分钟内完成。
+你觉得这个方向可以吗？`,
+      time: '2024-03-18 10:31',
+      status: 'thinking'
+    },
+    {
+      id: '3',
+      type: 'user',
+      content: '最近降温了，帮我蹭一下这个热点，写几篇内容',
+      time: '2024-03-18 11:00'
+    },
+    {
+      id: '4',
+      type: 'assistant',
+      content: `正在分析降温话题的相关数据...
+
+发现以下热点机会：
+1. "倒春寒"话题阅读量：890万
+2. 相关关键词：保暖穿搭、养生茶饮、防感冒
+
+建议创建以下内容：
+1. 《紧急预警！降温10℃怎么穿？这些单品让你温暖又时髦》
+   - 重点：保暖单品推荐、叠穿技巧
+   - 预期互动：4.2%
+
+2. 《降温必备！5款养生茶饮在家也能轻松做》
+   - 重点：简单配方、养生知识
+   - 预期互动：3.8%
+
+3. 《春捂秋冻不是闹着玩！医生推荐的防感冒小妙招》
+   - 重点：实用建议、专业性
+   - 预期互动：3.5%
+
+是否需要我开始生成这些内容？`,
+      time: '2024-03-18 11:01',
+      status: 'analyzing'
+    },
+    {
+      id: '5',
+      type: 'user',
+      content: '我们最近上了春季新品，帮我写几篇推广内容',
+      time: '2024-03-18 11:30'
+    },
+    {
+      id: '6',
+      type: 'assistant',
+      content: `让我查看一下最近的新品信息...
+
+已找到春季新品系列：
+- 连衣裙系列（3款）
+- 小众设计包包（2款）
+- 配饰系列（5款）
+
+分析建议：
+1. 内容节奏：
+   - 第1-2天：概览类内容，引发关注
+   - 第3-5天：单品深度测评
+   - 第6-7天：搭配案例分享
+
+具体方案：
+1. 《春日新品首发！这些单品让你美得不撞款》
+   - 重点：新品全系列概览
+   - 发布时间：今天下午 2点
+
+2. 《测评｜新款小众包包的5个惊喜细节》
+   - 重点：包包细节展示、使用场景
+   - 发布时间：明天上午 10点
+
+3. 《这条连衣裙=3种风格！春日穿搭速成攻略》
+   - 重点：单品多场景搭配
+   - 发布时间：后天下午 3点
+
+我已经开始准备第一篇内容，需要我先给你看看吗？`,
+      time: '2024-03-18 11:31',
+      status: 'working'
+    }
+  ];
+
   return (
     <div className="publish-plan-container">
       <Tabs
         activeKey={activeTab}
         onChange={setActiveTab}
         tabBarExtraContent={
-          <Button icon={<CalendarOutlined />} onClick={() => setCalendarVisible(true)}>
-            查看日历
-          </Button>
+          <Space>
+            <Button icon={<RobotOutlined />} onClick={() => setAiAssistantVisible(true)}>
+              唤起助手
+            </Button>
+            <Button icon={<CalendarOutlined />} onClick={() => setCalendarVisible(true)}>
+              查看日历
+            </Button>
+          </Space>
         }
         items={[
           {
@@ -1341,6 +1540,99 @@ const PublishPlan: React.FC = () => {
           dateCellRender={dateCellRender}
         />
       </Modal>
+
+      {/* AI 助手抽屉 */}
+      <Drawer
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <RobotOutlined />
+            <span>AI 助手</span>
+          </div>
+        }
+        placement="right"
+        width={500}
+        open={aiAssistantVisible}
+        onClose={() => setAiAssistantVisible(false)}
+        extra={
+          <Space>
+            <Button onClick={() => setAiAssistantVisible(false)}>关闭</Button>
+          </Space>
+        }
+      >
+        <div style={{ height: 'calc(100vh - 150px)', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1, overflow: 'auto', padding: '0 16px' }}>
+            {dialogHistory.map(dialog => (
+              <div
+                key={dialog.id}
+                style={{
+                  marginBottom: 24,
+                  display: 'flex',
+                  flexDirection: dialog.type === 'user' ? 'row-reverse' : 'row',
+                  gap: 12
+                }}
+              >
+                <Avatar
+                  style={{
+                    backgroundColor: dialog.type === 'user' ? '#1890ff' : '#f56a00',
+                    flexShrink: 0
+                  }}
+                >
+                  {dialog.type === 'user' ? '我' : 'AI'}
+                </Avatar>
+                <div
+                  style={{
+                    maxWidth: '80%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 4
+                  }}
+                >
+                  <div
+                    style={{
+                      padding: 12,
+                      background: dialog.type === 'user' ? '#1890ff' : '#f5f5f5',
+                      color: dialog.type === 'user' ? '#fff' : '#000',
+                      borderRadius: 8,
+                      whiteSpace: 'pre-wrap'
+                    }}
+                  >
+                    {dialog.content}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: '#999',
+                      textAlign: dialog.type === 'user' ? 'right' : 'left'
+                    }}
+                  >
+                    {dialog.time}
+                  </div>
+                  {dialog.type === 'assistant' && dialog.status && (
+                    <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {dialog.status === 'thinking' && <LoadingOutlined />}
+                      <span style={{ fontSize: 12, color: '#666' }}>
+                        {dialog.status === 'thinking' && '正在思考...'}
+                        {dialog.status === 'analyzing' && '正在分析数据...'}
+                        {dialog.status === 'working' && '正在生成内容...'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ borderTop: '1px solid #f0f0f0', padding: '16px 0', marginTop: 16 }}>
+            <Input.TextArea
+              placeholder="输入你的需求，比如：帮我写一篇关于新品上市的笔记..."
+              autoSize={{ minRows: 3, maxRows: 6 }}
+              style={{ marginBottom: 16 }}
+            />
+            <Button type="primary" block>
+              发送
+            </Button>
+          </div>
+        </div>
+      </Drawer>
     </div>
   );
 };
