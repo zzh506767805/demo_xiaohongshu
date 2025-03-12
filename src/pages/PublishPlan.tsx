@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Drawer, Form, InputNumber, DatePicker, Space, List, Card, Modal, message, Input, Radio, Tooltip, Calendar, Tabs, Avatar, Select, Statistic, Row, Col } from 'antd';
+import { Button, Drawer, Form, InputNumber, DatePicker, Space, List, Card, Modal, message, Input, Radio, Tooltip, Calendar, Tabs, Avatar, Select, Statistic, Row, Col, Timeline, Table } from 'antd';
 import { PlusOutlined, DeleteOutlined, QuestionCircleOutlined, LoadingOutlined, CalendarOutlined, RobotOutlined, LeftOutlined, RightOutlined, ShareAltOutlined, HeartOutlined, MessageOutlined, StarOutlined, EllipsisOutlined } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
@@ -77,6 +77,7 @@ const mockAccounts: XHSAccount[] = [
 
 const PublishPlan: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
+  const [viewMode, setViewMode] = useState<'task' | 'timeline' | 'list'>('task');
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [singleNoteDrawerVisible, setSingleNoteDrawerVisible] = useState(false);
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -712,6 +713,395 @@ const PublishPlan: React.FC = () => {
     }
   ];
 
+  const renderTaskView = () => (
+    <div style={{ display: 'flex', height: 'calc(100vh - 100px)' }}>
+      <div style={{ width: 300, borderRight: '1px solid #f0f0f0', padding: '16px' }}>
+        <List
+          dataSource={allPlans}
+          renderItem={plan => (
+            <List.Item
+              style={{ cursor: 'pointer' }}
+              onClick={() => setSelectedPlan(plan)}
+            >
+              <Card
+                size="small"
+                title={
+                  <div>
+                    <div style={{ marginBottom: '8px' }}>
+                      <span style={{ fontWeight: 'bold' }}>{plan.name || '未命名计划'}</span>
+                    </div>
+                    {plan.accountId && (
+                      <div style={{ marginBottom: '8px' }}>
+                        <Avatar
+                          size="small"
+                          src={mockAccounts.find(acc => acc.id === plan.accountId)?.avatar}
+                        />
+                        <span style={{ marginLeft: '8px' }}>{mockAccounts.find(acc => acc.id === plan.accountId)?.nickname}</span>
+                      </div>
+                    )}
+                    <div style={{ color: '#666' }}>{plan.startDate} 至 {plan.endDate}</div>
+                  </div>
+                }
+                style={{ width: '100%', backgroundColor: selectedPlan?.id === plan.id ? '#f0f0f0' : 'white' }}
+              >
+                <p>计划发布: {plan.count} 篇</p>
+              </Card>
+            </List.Item>
+          )}
+        />
+      </div>
+      <div style={{ flex: 1, padding: '16px' }}>
+        {loadingVisible ? (
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            height: '100%',
+            backgroundColor: '#fff',
+            borderRadius: 8,
+            padding: '24px'
+          }}>
+            <LoadingOutlined style={{ fontSize: '36px', color: '#1890ff', marginBottom: '16px' }} />
+            <div style={{ fontSize: '16px', color: '#666' }}>{loadingTips}</div>
+          </div>
+        ) : selectedPlan && (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h2>{selectedPlan.startDate} 至 {selectedPlan.endDate}的发布计划</h2>
+              <Space>
+                <Button type="primary" onClick={handleConfirmPlan}>确认执行计划</Button>
+              </Space>
+            </div>
+            <Tabs
+              defaultActiveKey="xiaohongshu"
+              items={[
+                {
+                  key: 'xiaohongshu',
+                  label: '小红书',
+                  children: (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+                      {selectedPlan.notes.map((note, index) => (
+                        <Card key={note.id}>
+                          <img
+                            alt="小红书预览"
+                            src={note.platforms?.xiaohongshu?.imageUrl || note.imageUrl}
+                            style={{ height: 200, width: '100%', objectFit: 'cover', marginBottom: 16 }}
+                          />
+                          <Card.Meta
+                            title={
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span>{note.platforms?.xiaohongshu?.title || note.title}</span>
+                                <Button type="text" danger icon={<DeleteOutlined />} onClick={() => handleDeleteNote(note.id)} />
+                              </div>
+                            }
+                            description={
+                              <div>
+                                <p>{note.platforms?.xiaohongshu?.content || note.content}</p>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                                  <Button type="link" onClick={() => handleEdit(note, index)}>编辑</Button>
+                                  <span style={{ color: '#666' }}>发布时间：{dayjs(note.scheduledTime || selectedPlan.startDate).format('YYYY-MM-DD HH:mm')}</span>
+                                </div>
+                              </div>
+                            }
+                          />
+                        </Card>
+                      ))}
+                    </div>
+                  )
+                },
+                {
+                  key: 'wechat',
+                  label: '微信',
+                  children: (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+                      {selectedPlan.notes.map((note, index) => (
+                        <Card key={note.id}>
+                          <img
+                            alt="微信预览"
+                            src={note.platforms?.wechat?.imageUrl || note.imageUrl}
+                            style={{ height: 200, width: '100%', objectFit: 'cover', marginBottom: 16 }}
+                          />
+                          <Card.Meta
+                            title={
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span>{note.platforms?.wechat?.title || note.title}</span>
+                                <Button type="text" danger icon={<DeleteOutlined />} onClick={() => handleDeleteNote(note.id)} />
+                              </div>
+                            }
+                            description={
+                              <div>
+                                <p>{note.platforms?.wechat?.content || note.content}</p>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                                  <Button type="link" onClick={() => handleEdit(note, index)}>编辑</Button>
+                                  <span style={{ color: '#666' }}>发布时间：{dayjs(note.scheduledTime || selectedPlan.startDate).format('YYYY-MM-DD HH:mm')}</span>
+                                </div>
+                              </div>
+                            }
+                          />
+                        </Card>
+                      ))}
+                    </div>
+                  )
+                }
+              ]}
+            />
+            <div style={{ marginTop: 16, borderTop: '1px solid #f0f0f0', paddingTop: 16 }}>
+              <Space>
+                <Button type="text" icon={<DeleteOutlined />} onClick={() => editingNote && handleDeleteNote(editingNote.id)}>删除</Button>
+                <p style={{ color: '#1890ff' }}>计划发布时间：{selectedPlan.startDate}</p>
+              </Space>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderTimelineView = () => {
+    const allNotes = allPlans.flatMap(plan => 
+      plan.notes.map((note, index) => ({
+        ...note,
+        planName: plan.name || '未命名计划',
+        planId: plan.id,
+        scheduledTime: dayjs(plan.startDate).add(index, 'days').format('YYYY-MM-DD'),
+        account: mockAccounts.find(acc => acc.id === plan.accountId)
+      }))
+    ).sort((a, b) => dayjs(b.scheduledTime).diff(dayjs(a.scheduledTime))); // 修改排序为倒序
+
+    const groupedNotes = allNotes.reduce((acc, note) => {
+      const date = note.scheduledTime;
+      if (!acc[date]) {
+        acc[date] = [];
+      }
+      acc[date].push(note);
+      return acc;
+    }, {} as Record<string, typeof allNotes>);
+
+    return (
+      <div style={{ padding: '16px', display: 'flex' }}>
+        <Timeline 
+          mode="left"
+          style={{ 
+            flex: '0 0 200px',
+            borderRight: '1px solid #f0f0f0',
+            paddingRight: '16px',
+            marginRight: '16px'
+          }}
+        >
+          {Object.entries(groupedNotes).map(([date]) => (
+            <Timeline.Item 
+              key={date}
+              label={
+                <div style={{
+                  fontSize: '12px',
+                  whiteSpace: 'nowrap',
+                  padding: '4px 0'
+                }}>
+                  {dayjs(date).format('YYYY年MM月DD日')}
+                </div>
+              }
+              style={{
+                paddingBottom: '20px'
+              }}
+            />
+          ))}
+        </Timeline>
+        <div style={{ flex: 1, overflow: 'auto' }}>
+          {Object.entries(groupedNotes).map(([date, notes]) => (
+            <div 
+              key={date}
+              style={{ 
+                marginBottom: '24px',
+              }}
+            >
+              <div style={{ 
+                fontSize: '16px',
+                fontWeight: 'bold',
+                marginBottom: '16px',
+                color: '#1890ff',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <CalendarOutlined />
+                {dayjs(date).format('YYYY年MM月DD日')}
+                <span style={{ 
+                  fontSize: '14px',
+                  fontWeight: 'normal',
+                  color: '#666',
+                  marginLeft: '8px'
+                }}>
+                  {notes.length} 篇笔记
+                </span>
+              </div>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
+                gap: '16px',
+                backgroundColor: '#fff',
+                padding: '16px',
+                borderRadius: '8px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+              }}>
+                {notes.map(note => (
+                  <Card
+                    key={note.id}
+                    size="small"
+                    hoverable
+                    cover={
+                      <img
+                        alt={note.title}
+                        src={note.imageUrl}
+                        style={{ height: 160, objectFit: 'cover' }}
+                      />
+                    }
+                  >
+                    <Card.Meta
+                      avatar={note.account && <Avatar src={note.account.avatar} />}
+                      title={note.title}
+                      description={
+                        <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                          <div style={{ fontSize: '12px', color: '#666' }}>
+                            来自：{note.planName}
+                          </div>
+                          <div style={{ fontSize: '12px', color: '#999' }}>
+                            {note.tags?.map(tag => `#${tag}`).join(' ')}
+                          </div>
+                        </Space>
+                      }
+                    />
+                    <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Button type="link" size="small" onClick={() => handleEdit(note, 0)}>
+                        编辑
+                      </Button>
+                      <Button 
+                        type="text" 
+                        size="small" 
+                        danger
+                        icon={<DeleteOutlined />}
+                        onClick={() => handleDeleteNote(note.id)}
+                      />
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderListView = () => {
+    const allNotes = allPlans.flatMap(plan => 
+      plan.notes.map((note, index) => ({
+        ...note,
+        planName: plan.name || '未命名计划',
+        planId: plan.id,
+        scheduledTime: dayjs(plan.startDate).add(index, 'days').format('YYYY-MM-DD'),
+        account: mockAccounts.find(acc => acc.id === plan.accountId),
+        likes: Math.floor(Math.random() * 1000),
+        comments: Math.floor(Math.random() * 100),
+        saves: Math.floor(Math.random() * 500)
+      }))
+    );
+
+    const columns = [
+      {
+        title: '封面',
+        dataIndex: 'imageUrl',
+        key: 'imageUrl',
+        width: 100,
+        render: (imageUrl: string) => (
+          <img src={imageUrl} alt="封面" style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 4 }} />
+        )
+      },
+      {
+        title: '标题',
+        dataIndex: 'title',
+        key: 'title',
+        render: (title: string, record: any) => (
+          <div>
+            <div style={{ fontWeight: 500, marginBottom: 4 }}>{title}</div>
+            <div style={{ fontSize: 12, color: '#666' }}>
+              来自：{record.planName}
+            </div>
+          </div>
+        )
+      },
+      {
+        title: '发布账号',
+        dataIndex: 'account',
+        key: 'account',
+        render: (account: any) => account ? (
+          <Space>
+            <Avatar size="small" src={account.avatar} />
+            <span>{account.nickname}</span>
+          </Space>
+        ) : '-'
+      },
+      {
+        title: '发布时间',
+        dataIndex: 'scheduledTime',
+        key: 'scheduledTime',
+        sorter: (a: any, b: any) => dayjs(a.scheduledTime).unix() - dayjs(b.scheduledTime).unix(),
+        render: (date: string) => dayjs(date).format('YYYY-MM-DD')
+      },
+      {
+        title: '互动数据',
+        key: 'interactions',
+        render: (record: any) => (
+          <Space size={16}>
+            <span>
+              <HeartOutlined /> {record.likes}
+            </span>
+            <span>
+              <MessageOutlined /> {record.comments}
+            </span>
+            <span>
+              <StarOutlined /> {record.saves}
+            </span>
+          </Space>
+        ),
+        sorter: (a: any, b: any) => a.likes - b.likes
+      },
+      {
+        title: '操作',
+        key: 'action',
+        render: (record: any) => (
+          <Space>
+            <Button type="link" size="small" onClick={() => handleEdit(record, 0)}>
+              编辑
+            </Button>
+            <Button 
+              type="text" 
+              size="small" 
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => handleDeleteNote(record.id)}
+            />
+          </Space>
+        )
+      }
+    ];
+
+    return (
+      <div style={{ padding: '16px' }}>
+        <Table
+          columns={columns}
+          dataSource={allNotes}
+          rowKey="id"
+          pagination={{
+            pageSize: 10,
+            showSizeChanger: true,
+            showTotal: (total) => `共 ${total} 条数据`
+          }}
+        />
+      </div>
+    );
+  };
+
   return (
     <div className="publish-plan-container">
       <Tabs
@@ -938,9 +1328,16 @@ const PublishPlan: React.FC = () => {
             key: 'plan',
             label: '发布计划',
             children: (
-              <div style={{ display: 'flex', height: 'calc(100vh - 100px)' }}>
-                <div style={{ width: 300, borderRight: '1px solid #f0f0f0', padding: '16px' }}>
-                  <Space style={{ width: '100%', marginBottom: 16 }}>
+              <div>
+                <div style={{ 
+                  padding: '16px 16px 0',
+                  borderBottom: '1px solid #f0f0f0',
+                  marginBottom: '16px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <Space>
                     <Button type="primary" icon={<PlusOutlined />} onClick={showDrawer}>
                       智能内容规划
                     </Button>
@@ -948,145 +1345,18 @@ const PublishPlan: React.FC = () => {
                       创作笔记
                     </Button>
                   </Space>
-                  <List
-                    dataSource={allPlans}
-                    renderItem={plan => (
-                      <List.Item
-                        style={{ cursor: 'pointer' }}
-                        onClick={() => setSelectedPlan(plan)}
-                      >
-                        <Card
-                          size="small"
-                          title={
-                            <div>
-                              <div style={{ marginBottom: '8px' }}>
-                                <span style={{ fontWeight: 'bold' }}>{plan.name || '未命名计划'}</span>
-                              </div>
-                              {plan.accountId && (
-                                <div style={{ marginBottom: '8px' }}>
-                                  <Avatar
-                                    size="small"
-                                    src={mockAccounts.find(acc => acc.id === plan.accountId)?.avatar}
-                                  />
-                                  <span style={{ marginLeft: '8px' }}>{mockAccounts.find(acc => acc.id === plan.accountId)?.nickname}</span>
-                                </div>
-                              )}
-                              <div style={{ color: '#666' }}>{plan.startDate} 至 {plan.endDate}</div>
-                            </div>
-                          }
-                          style={{ width: '100%', backgroundColor: selectedPlan?.id === plan.id ? '#f0f0f0' : 'white' }}
-                        >
-                          <p>计划发布: {plan.count} 篇</p>
-                        </Card>
-                      </List.Item>
-                    )}
-                  />
+                  <Radio.Group
+                    value={viewMode}
+                    onChange={e => setViewMode(e.target.value)}
+                    optionType="button"
+                    buttonStyle="solid"
+                  >
+                    <Radio.Button value="task">任务视图</Radio.Button>
+                    <Radio.Button value="timeline">时间轴视图</Radio.Button>
+                    <Radio.Button value="list">列表视图</Radio.Button>
+                  </Radio.Group>
                 </div>
-                <div style={{ flex: 1, padding: '16px' }}>
-                  {loadingVisible ? (
-                    <div style={{ 
-                      display: 'flex', 
-                      flexDirection: 'column', 
-                      alignItems: 'center', 
-                      justifyContent: 'center',
-                      height: '100%',
-                      backgroundColor: '#fff',
-                      borderRadius: 8,
-                      padding: '24px'
-                    }}>
-                      <LoadingOutlined style={{ fontSize: '36px', color: '#1890ff', marginBottom: '16px' }} />
-                      <div style={{ fontSize: '16px', color: '#666' }}>{loadingTips}</div>
-                    </div>
-                  ) : selectedPlan && (
-                    <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                        <h2>{selectedPlan.startDate} 至 {selectedPlan.endDate}的发布计划</h2>
-                        <Space>
-                          <Button type="primary" onClick={handleConfirmPlan}>确认执行计划</Button>
-                        </Space>
-                      </div>
-                      <Tabs
-                        defaultActiveKey="xiaohongshu"
-                        items={[
-                          {
-                            key: 'xiaohongshu',
-                            label: '小红书',
-                            children: (
-                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
-                                {selectedPlan.notes.map((note, index) => (
-                                  <Card key={note.id}>
-                                    <img
-                                      alt="小红书预览"
-                                      src={note.platforms?.xiaohongshu?.imageUrl || note.imageUrl}
-                                      style={{ height: 200, width: '100%', objectFit: 'cover', marginBottom: 16 }}
-                                    />
-                                    <Card.Meta
-                                      title={
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                          <span>{note.platforms?.xiaohongshu?.title || note.title}</span>
-                                          <Button type="text" danger icon={<DeleteOutlined />} onClick={() => handleDeleteNote(note.id)} />
-                                        </div>
-                                      }
-                                      description={
-                                        <div>
-                                          <p>{note.platforms?.xiaohongshu?.content || note.content}</p>
-                                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-                                            <Button type="link" onClick={() => handleEdit(note, index)}>编辑</Button>
-                                            <span style={{ color: '#666' }}>发布时间：{dayjs(note.scheduledTime || selectedPlan.startDate).format('YYYY-MM-DD HH:mm')}</span>
-                                          </div>
-                                        </div>
-                                      }
-                                    />
-                                  </Card>
-                                ))}
-                              </div>
-                            )
-                          },
-                          {
-                            key: 'wechat',
-                            label: '微信',
-                            children: (
-                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
-                                {selectedPlan.notes.map((note, index) => (
-                                  <Card key={note.id}>
-                                    <img
-                                      alt="微信预览"
-                                      src={note.platforms?.wechat?.imageUrl || note.imageUrl}
-                                      style={{ height: 200, width: '100%', objectFit: 'cover', marginBottom: 16 }}
-                                    />
-                                    <Card.Meta
-                                      title={
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                          <span>{note.platforms?.wechat?.title || note.title}</span>
-                                          <Button type="text" danger icon={<DeleteOutlined />} onClick={() => handleDeleteNote(note.id)} />
-                                        </div>
-                                      }
-                                      description={
-                                        <div>
-                                          <p>{note.platforms?.wechat?.content || note.content}</p>
-                                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-                                            <Button type="link" onClick={() => handleEdit(note, index)}>编辑</Button>
-                                            <span style={{ color: '#666' }}>发布时间：{dayjs(note.scheduledTime || selectedPlan.startDate).format('YYYY-MM-DD HH:mm')}</span>
-                                          </div>
-                                        </div>
-                                      }
-                                    />
-                                  </Card>
-                                ))}
-                              </div>
-                            )
-                          }
-                        ]}
-                      />
-                      <div style={{ marginTop: 16, borderTop: '1px solid #f0f0f0', paddingTop: 16 }}>
-                        <Space>
-                          <Button type="text" icon={<DeleteOutlined />} onClick={() => editingNote && handleDeleteNote(editingNote.id)}>删除</Button>
-                          <p style={{ color: '#1890ff' }}>计划发布时间：{selectedPlan.startDate}</p>
-                        </Space>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                {viewMode === 'task' ? renderTaskView() : viewMode === 'timeline' ? renderTimelineView() : renderListView()}
               </div>
             )
           },
