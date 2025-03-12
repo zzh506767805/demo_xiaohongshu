@@ -33,7 +33,7 @@ const App: React.FC = () => {
       } else {
         clearInterval(stepInterval)
       }
-    }, 1500)
+    }, 500)
 
     return () => clearInterval(stepInterval)
   }, [])

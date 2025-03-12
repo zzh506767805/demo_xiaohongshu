@@ -94,6 +94,7 @@ const PublishPlan: React.FC = () => {
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [currentNoteIndex, setCurrentNoteIndex] = useState<number>(-1);
   const [aiAssistantVisible, setAiAssistantVisible] = useState(false);
+  const [isFirstVisit] = useState(() => !localStorage.getItem('hasVisited'));
 
   const showDrawer = () => {
     setDrawerVisible(true);
@@ -208,19 +209,38 @@ const PublishPlan: React.FC = () => {
       message.success('发布计划创建成功！');
       onClose();
 
-      setLoadingVisible(true);
-      const tips = ['正在帮您寻找合适的笔记素材', '正在为笔记素材配图', '正在编排笔记发布计划'];
-      let currentTipIndex = 0;
-  
-      const tipInterval = setInterval(() => {
-        setLoadingTips(tips[currentTipIndex]);
-        currentTipIndex = (currentTipIndex + 1) % tips.length;
-      }, 5000);
-  
-      setTimeout(() => {
-        clearInterval(tipInterval);
-        setLoadingVisible(false);
-        
+      if (isFirstVisit) {
+        localStorage.setItem('hasVisited', 'true');
+        setLoadingVisible(true);
+        const tips = ['正在帮您寻找合适的笔记素材', '正在为笔记素材配图', '正在编排笔记发布计划'];
+        let currentTipIndex = 0;
+    
+        const tipInterval = setInterval(() => {
+          setLoadingTips(tips[currentTipIndex]);
+          currentTipIndex = (currentTipIndex + 1) % tips.length;
+        }, 2000);
+    
+        setTimeout(() => {
+          clearInterval(tipInterval);
+          setLoadingVisible(false);
+          
+          const updatedPlan = {
+            ...newPlan,
+            notes: Array(values.count).fill(null).map((_, index) => ({
+              id: `note-${Date.now()}-${index}`,
+              title: `笔记 ${index + 1}`,
+              content: '这是一篇小红书笔记内容示例...',
+              imageUrl: values.imageSource === 'manual' && selectedImages[index] 
+                ? selectedImages[index]
+                : `https://picsum.photos/400/400?random=${index}`,
+              tags: ['测试标签']
+            }))
+          };
+          
+          setPlans(plans => plans.map(p => p.id === newPlan.id ? updatedPlan : p));
+          setSelectedPlan(updatedPlan);
+        }, 3000);  // 从6秒改为3秒
+      } else {
         const updatedPlan = {
           ...newPlan,
           notes: Array(values.count).fill(null).map((_, index) => ({
@@ -236,7 +256,7 @@ const PublishPlan: React.FC = () => {
         
         setPlans(plans => plans.map(p => p.id === newPlan.id ? updatedPlan : p));
         setSelectedPlan(updatedPlan);
-      }, 15000);
+      }
     } catch (error) {
       console.error('表单验证失败:', error);
     }
@@ -715,36 +735,55 @@ const PublishPlan: React.FC = () => {
 
   const renderTaskView = () => (
     <div style={{ display: 'flex', height: 'calc(100vh - 100px)' }}>
-      <div style={{ width: 300, borderRight: '1px solid #f0f0f0', padding: '16px' }}>
+      <div style={{ 
+        width: '180px', 
+        minWidth: '150px',
+        maxWidth: '300px',
+        flexShrink: 0,
+        borderRight: '1px solid #f0f0f0', 
+        padding: '12px', 
+        overflow: 'auto',
+        resize: 'horizontal',
+        userSelect: 'none',  // 防止文本选择影响拖动
+        position: 'relative'  // 确保定位正确
+      }}>
         <List
           dataSource={allPlans}
           renderItem={plan => (
             <List.Item
-              style={{ cursor: 'pointer' }}
+              style={{ 
+                cursor: 'pointer', 
+                padding: '4px 0',
+                marginBottom: '8px'
+              }}
               onClick={() => setSelectedPlan(plan)}
             >
               <Card
                 size="small"
                 title={
-                  <div>
-                    <div style={{ marginBottom: '8px' }}>
+                  <div style={{ fontSize: '13px' }}>
+                    <div style={{ marginBottom: '4px' }}>
                       <span style={{ fontWeight: 'bold' }}>{plan.name || '未命名计划'}</span>
                     </div>
                     {plan.accountId && (
-                      <div style={{ marginBottom: '8px' }}>
+                      <div style={{ marginBottom: '4px' }}>
                         <Avatar
                           size="small"
                           src={mockAccounts.find(acc => acc.id === plan.accountId)?.avatar}
                         />
-                        <span style={{ marginLeft: '8px' }}>{mockAccounts.find(acc => acc.id === plan.accountId)?.nickname}</span>
+                        <span style={{ marginLeft: '4px', fontSize: '12px' }}>{mockAccounts.find(acc => acc.id === plan.accountId)?.nickname}</span>
                       </div>
                     )}
-                    <div style={{ color: '#666' }}>{plan.startDate} 至 {plan.endDate}</div>
+                    <div style={{ color: '#666', fontSize: '12px' }}>{plan.startDate} 至 {plan.endDate}</div>
                   </div>
                 }
-                style={{ width: '100%', backgroundColor: selectedPlan?.id === plan.id ? '#f0f0f0' : 'white' }}
+                style={{ 
+                  width: '100%', 
+                  backgroundColor: selectedPlan?.id === plan.id ? '#f0f0f0' : 'white',
+                  borderRadius: '6px'
+                }}
               >
-                <p>计划发布: {plan.count} 篇</p>
+                <p style={{ fontSize: '12px', margin: 0 }}>计划发布: {plan.count} 篇</p>
               </Card>
             </List.Item>
           )}
@@ -937,12 +976,9 @@ const PublishPlan: React.FC = () => {
               </div>
               <div style={{ 
                 display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
+                gridTemplateColumns: 'repeat(3, 1fr)', 
                 gap: '16px',
-                backgroundColor: '#fff',
-                padding: '16px',
-                borderRadius: '8px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+                padding: '4px'
               }}>
                 {notes.map(note => (
                   <Card
@@ -1984,7 +2020,7 @@ const PublishPlan: React.FC = () => {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
-                            borderTop: '1px solid #f5f5f5',
+                            borderTop: '1px solid #f5f5f0',
                             paddingTop: 12
                           }}>
                             <Space size={24}>
