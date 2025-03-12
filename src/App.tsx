@@ -11,7 +11,7 @@ const { Header, Content, Sider } = Layout
 
 const App: React.FC = () => {
   const navigate = useNavigate()
-  const [siderWidth, setSiderWidth] = useState(200)
+  const [siderWidth, setSiderWidth] = useState(160)
   const [isDragging, setIsDragging] = useState(false)
   const [isInitializing, setIsInitializing] = useState(true)
   const [initStep, setInitStep] = useState(0)
@@ -46,7 +46,7 @@ const App: React.FC = () => {
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (isDragging) {
       const newWidth = e.clientX
-      if (newWidth >= 150 && newWidth <= 400) {
+      if (newWidth >= 120 && newWidth <= 400) {
         setSiderWidth(newWidth)
       }
     }
