@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react'
-import { Menu, Button } from 'antd'
+import { Menu, Button, Badge } from 'antd'
 import Layout from 'antd/lib/layout'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useNavigate } from 'react-router-dom'
@@ -15,6 +15,7 @@ const App: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false)
   const [isInitializing, setIsInitializing] = useState(true)
   const [initStep, setInitStep] = useState(0)
+  const [showBadge, setShowBadge] = useState(true)
 
   const initSteps = [
     '正在读取您的账户信息（粉丝数：12,580，笔记数：326）...',
@@ -122,8 +123,19 @@ const App: React.FC = () => {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Header style={{ display: 'flex', alignItems: 'center', background: '#fff', borderBottom: '1px solid #f0f0f0' }}>
+      <Header style={{ display: 'flex', alignItems: 'center', background: '#fff', borderBottom: '1px solid #f0f0f0', justifyContent: 'space-between' }}>
         <div style={{ fontSize: '20px', fontWeight: 'bold' }}>小红书自动发布工具</div>
+        <Badge count={showBadge ? 1 : 0} offset={[-8, 0]}>
+          <Button 
+            type="primary" 
+            onClick={() => {
+              setShowBadge(false)
+            }}
+            style={{ marginRight: '20px' }}
+          >
+            智能助手
+          </Button>
+        </Badge>
       </Header>
       <Layout>
         <Sider width={siderWidth} style={{ background: '#fff', position: 'relative' }}>
