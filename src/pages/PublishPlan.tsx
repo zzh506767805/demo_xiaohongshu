@@ -736,8 +736,8 @@ const PublishPlan: React.FC = () => {
   const renderTaskView = () => (
     <div style={{ display: 'flex', height: 'calc(100vh - 100px)' }}>
       <div style={{ 
-        width: '180px', 
-        minWidth: '150px',
+        width: '240px', 
+        minWidth: '200px',
         maxWidth: '300px',
         flexShrink: 0,
         borderRight: '1px solid #f0f0f0', 
