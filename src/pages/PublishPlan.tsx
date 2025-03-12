@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Drawer, Form, InputNumber, DatePicker, Space, List, Card, Modal, message, Input, Radio, Tooltip, Calendar, Tabs, Avatar, Select, Statistic, Row, Col, Timeline, Table } from 'antd';
+import { Button, Drawer, Form, InputNumber, DatePicker, Space, List, Card, Modal, message, Input, Radio, Tooltip, Calendar, Tabs, Avatar, Select, Statistic, Row, Col, Timeline, Table, Badge } from 'antd';
 import { PlusOutlined, DeleteOutlined, QuestionCircleOutlined, LoadingOutlined, CalendarOutlined, RobotOutlined, LeftOutlined, RightOutlined, ShareAltOutlined, HeartOutlined, MessageOutlined, StarOutlined, EllipsisOutlined } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
@@ -95,6 +95,7 @@ const PublishPlan: React.FC = () => {
   const [currentNoteIndex, setCurrentNoteIndex] = useState<number>(-1);
   const [aiAssistantVisible, setAiAssistantVisible] = useState(false);
   const [isFirstVisit] = useState(() => !localStorage.getItem('hasVisited'));
+  const [showBadge, setShowBadge] = useState(true);  // 添加新状态
 
   const showDrawer = () => {
     setDrawerVisible(true);
@@ -1145,9 +1146,14 @@ const PublishPlan: React.FC = () => {
         onChange={setActiveTab}
         tabBarExtraContent={
           <Space>
-            <Button icon={<RobotOutlined />} onClick={() => setAiAssistantVisible(true)}>
-              唤起助手
-            </Button>
+            <Badge count={showBadge ? 1 : 0} offset={[-5, 0]}>
+              <Button icon={<RobotOutlined />} onClick={() => {
+                setAiAssistantVisible(true);
+                setShowBadge(false);  // 点击时隐藏徽标
+              }}>
+                唤起助手
+              </Button>
+            </Badge>
             <Button icon={<CalendarOutlined />} onClick={() => setCalendarVisible(true)}>
               查看日历
             </Button>
