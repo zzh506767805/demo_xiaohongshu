@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { Button, Drawer, Form, InputNumber, DatePicker, Space, List, Card, Modal, message, Input, Radio, Tooltip, Calendar, Tabs, Avatar, Select, Statistic, Row, Col, Timeline, Table, Badge } from 'antd';
-import { PlusOutlined, DeleteOutlined, QuestionCircleOutlined, LoadingOutlined, CalendarOutlined, RobotOutlined, LeftOutlined, RightOutlined, ShareAltOutlined, HeartOutlined, MessageOutlined, StarOutlined, EllipsisOutlined } from '@ant-design/icons';
+import React, { useState, useEffect } from 'react';
+import { Button, Drawer, Form, DatePicker, Space, List, Card, Modal, message, Input, Radio, Tooltip, Calendar, Tabs, Avatar, Select, Timeline, Table, Badge, Row, Col, Statistic, Checkbox, Switch, Typography } from 'antd';
+import { PlusOutlined, DeleteOutlined, QuestionCircleOutlined, LoadingOutlined, CalendarOutlined, RobotOutlined, LeftOutlined, RightOutlined, ShareAltOutlined, HeartOutlined, MessageOutlined, StarOutlined, EllipsisOutlined, RiseOutlined, AppstoreOutlined, UnorderedListOutlined, TableOutlined, EditOutlined } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
+import { useParams, useNavigate } from 'react-router-dom';
 
 dayjs.extend(isBetween);
 
@@ -37,6 +38,7 @@ interface Note {
       imageUrl?: string;
     };
   };
+  status?: 'published' | 'unpublished';
 }
 
 interface XHSAccount {
@@ -46,7 +48,43 @@ interface XHSAccount {
   followers: number;
   posts: number;
   status: 'active' | 'inactive';
+  growth: {
+    followers: number;
+    views: number;
+    likes: number;
+    comments: number;
+    saves: number;
+  };
+  recentPosts: {
+    id: string;
+    title: string;
+    views: number;
+    likes: number;
+    comments: number;
+    saves: number;
+  }[];
 }
+
+interface ProductData {
+  id: string;
+  name: string;
+  price: number;
+  sales: number;
+  revenue: number;
+}
+
+interface ContentData {
+  id: string;
+  title: string;
+  publishTime: string;
+  views: number;
+  likes: number;
+  comments: number;
+  saves: number;
+  products: ProductData[];
+}
+
+
 
 const mockAccounts: XHSAccount[] = [
   {
@@ -55,7 +93,32 @@ const mockAccounts: XHSAccount[] = [
     nickname: '时尚生活家',
     followers: 12580,
     posts: 326,
-    status: 'active'
+    status: 'active',
+    growth: {
+      followers: 580,
+      views: 125000,
+      likes: 8900,
+      comments: 1200,
+      saves: 3400
+    },
+    recentPosts: [
+      {
+        id: '1',
+        title: '春季穿搭分享',
+        views: 2451,
+        likes: 167,
+        comments: 32,
+        saves: 89
+      },
+      {
+        id: '2',
+        title: '新品开箱测评',
+        views: 1892,
+        likes: 145,
+        comments: 28,
+        saves: 76
+      }
+    ]
   },
   {
     id: '2',
@@ -63,7 +126,32 @@ const mockAccounts: XHSAccount[] = [
     nickname: '美食探店达人',
     followers: 45678,
     posts: 892,
-    status: 'active'
+    status: 'active',
+    growth: {
+      followers: 678,
+      views: 256000,
+      likes: 15600,
+      comments: 2100,
+      saves: 5600
+    },
+    recentPosts: [
+      {
+        id: '3',
+        title: '新开网红店打卡',
+        views: 3421,
+        likes: 156,
+        comments: 42,
+        saves: 89
+      },
+      {
+        id: '4',
+        title: '美食推荐合集',
+        views: 2876,
+        likes: 134,
+        comments: 28,
+        saves: 67
+      }
+    ]
   },
   {
     id: '3',
@@ -71,31 +159,227 @@ const mockAccounts: XHSAccount[] = [
     nickname: '旅行摄影师',
     followers: 89012,
     posts: 567,
-    status: 'inactive'
+    status: 'inactive',
+    growth: {
+      followers: 0,
+      views: 0,
+      likes: 0,
+      comments: 0,
+      saves: 0
+    },
+    recentPosts: []
   }
 ];
 
+const mockPlans: Plan[] = [
+  {
+    id: 'plan-1',
+    name: '春季新品推广计划',
+    startDate: '2024-03-18',
+    endDate: '2024-03-24',
+    count: 6,
+    notes: [
+      {
+        id: 'note-1',
+        title: '春季连衣裙上新',
+        content: '分享一款春季必备的连衣裙...',
+        imageUrl: 'https://picsum.photos/400/400?random=1',
+        contentType: '产品介绍',
+        tone: '轻松随意',
+        tags: ['春季新品', '连衣裙', '穿搭'],
+        scheduledTime: '2024-03-18 10:00'
+      },
+      {
+        id: 'note-2',
+        title: '春日搭配指南',
+        content: '教你如何搭配这款百搭连衣裙...',
+        imageUrl: 'https://picsum.photos/400/400?random=2',
+        contentType: '使用体验',
+        tone: '专业正式',
+        tags: ['搭配指南', '穿搭技巧'],
+        scheduledTime: '2024-03-20 14:00'
+      }
+    ]
+  },
+  {
+    id: 'plan-2',
+    name: '美妆护肤分享',
+    startDate: '2024-03-25',
+    endDate: '2024-03-31',
+    count: 4,
+    notes: [
+      {
+        id: 'note-3',
+        title: '春季护肤重点',
+        content: '分享春季护肤的注意事项...',
+        imageUrl: 'https://picsum.photos/400/400?random=3',
+        contentType: '干货分享',
+        tone: '专业正式',
+        tags: ['护肤', '干货'],
+        scheduledTime: '2024-03-25 10:00'
+      }
+    ]
+  }
+];
+
+const mockContentData: ContentData[] = [
+  {
+    id: '1',
+    title: '春季新品首发：轻奢设计感连衣裙',
+    publishTime: '2024-03-15',
+    views: 25678,
+    likes: 1234,
+    comments: 89,
+    saves: 567,
+    products: [
+      {
+        id: 'p1',
+        name: '设计感泡泡袖连衣裙',
+        price: 299,
+        sales: 156,
+        revenue: 46644
+      },
+      {
+        id: 'p2',
+        name: '配套腰带',
+        price: 69,
+        sales: 89,
+        revenue: 6141
+      }
+    ]
+  },
+  {
+    id: '2',
+    title: '春日穿搭指南：3个实用技巧',
+    publishTime: '2024-03-17',
+    views: 18965,
+    likes: 876,
+    comments: 45,
+    saves: 234,
+    products: [
+      {
+        id: 'p3',
+        name: '百搭小白鞋',
+        price: 399,
+        sales: 78,
+        revenue: 31122
+      }
+    ]
+  },
+  {
+    id: '3',
+    title: '新款眼霜测评：一周使用感受分享',
+    publishTime: '2024-03-20',
+    views: 17450,
+    likes: 945,
+    comments: 76,
+    saves: 321,
+    products: [
+      {
+        id: 'p4',
+        name: '多效修护眼霜',
+        price: 219,
+        sales: 135,
+        revenue: 29565
+      }
+    ]
+  },
+  {
+    id: '4',
+    title: '早春约会穿搭灵感：清甜风VS成熟风',
+    publishTime: '2024-03-22',
+    views: 24120,
+    likes: 1378,
+    comments: 120,
+    saves: 489,
+    products: [
+      {
+        id: 'p5',
+        name: '绑带凉鞋',
+        price: 359,
+        sales: 98,
+        revenue: 35182
+      },
+      {
+        id: 'p6',
+        name: '小香风套装',
+        price: 599,
+        sales: 62,
+        revenue: 37138
+      }
+    ]
+  },
+  {
+    id: '5',
+    title: '每天10分钟：春季懒人护肤攻略',
+    publishTime: '2024-03-25',
+    views: 21340,
+    likes: 1056,
+    comments: 94,
+    saves: 378,
+    products: [
+      {
+        id: 'p7',
+        name: '温和洁面乳',
+        price: 99,
+        sales: 176,
+        revenue: 17424
+      },
+      {
+        id: 'p8',
+        name: '多效乳液',
+        price: 189,
+        sales: 104,
+        revenue: 19656
+      }
+    ]
+  }
+];
+
+
+// Mock 热点数据
+
 const PublishPlan: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [viewMode, setViewMode] = useState<'task' | 'timeline' | 'list'>('task');
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [singleNoteDrawerVisible, setSingleNoteDrawerVisible] = useState(false);
-  const [plans, setPlans] = useState<Plan[]>([]);
+  const [plans, setPlans] = useState<Plan[]>(mockPlans);  // 使用 mock 数据初始化
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [form] = Form.useForm();
-  const [, setSelectedAccount] = useState<string>();
   const [singleNoteForm] = Form.useForm();
   const [imageSource, setImageSource] = useState('auto');
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
-  const [loadingTips, setLoadingTips] = useState<string>('');
-  const [loadingVisible, setLoadingVisible] = useState(false);
-  const [calendarVisible, setCalendarVisible] = useState(false);
-  const [demoPlans, setDemoPlans] = useState<Plan[]>([]);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [currentNoteIndex, setCurrentNoteIndex] = useState<number>(-1);
   const [aiAssistantVisible, setAiAssistantVisible] = useState(false);
-  const [isFirstVisit] = useState(() => !localStorage.getItem('hasVisited'));
-  const [showBadge, setShowBadge] = useState(true);  // 添加新状态
+  const [showBadge, setShowBadge] = useState(true);
+  const [calendarVisible, setCalendarVisible] = useState(false);
+  const [autoGenerateContent, setAutoGenerateContent] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+
+  // 获取当前账号信息
+  const currentAccount = mockAccounts.find(acc => acc.id === id);
+
+  // 如果没有找到账号，返回账号概览页面
+  React.useEffect(() => {
+    if (!currentAccount) {
+      navigate('/accounts');
+    }
+  }, [currentAccount, navigate]);
+
+  // 在组件useEffect部分添加默认选择第一个计划的逻辑
+  useEffect(() => {
+    // 初始化数据
+    // ... existing code ...
+    
+    // 默认选中第一个发布计划
+    if (plans.length > 0 && !selectedPlan) {
+      setSelectedPlan(plans[0]);
+    }
+  }, []);
 
   const showDrawer = () => {
     setDrawerVisible(true);
@@ -146,45 +430,6 @@ const PublishPlan: React.FC = () => {
     }
   };
 
-  // 初始化演示数据
-  React.useEffect(() => {
-    const march2025Plans = [
-      {
-        id: 'demo-1',
-        name: '春季穿搭系列计划',
-        startDate: '2025-03-01',
-        endDate: '2025-03-07',
-        count: 7,
-        accountId: '1', // 关联到时尚生活家账号
-        notes: Array(7).fill(null).map((_, index) => ({
-          id: `demo-note-1-${index}`,
-          title: `春季穿搭分享 ${index + 1}`,
-          content: '分享一套春季日常穿搭，舒适又时尚...',
-          imageUrl: `https://picsum.photos/400/400?random=${index}`,
-          tags: ['穿搭', '春季', '日常']
-        }))
-      },
-      {
-        id: 'demo-2',
-        name: '美食探店系列计划',
-        startDate: '2025-03-15',
-        endDate: '2025-03-20',
-        count: 6,
-        accountId: '2', // 关联到美食探店达人账号
-        notes: Array(6).fill(null).map((_, index) => ({
-          id: `demo-note-2-${index}`,
-          title: `美食探店记录 ${index + 1}`,
-          content: '发现了一家超级好吃的餐厅，必须安利给大家...',
-          imageUrl: `https://picsum.photos/400/400?random=${index + 10}`,
-          tags: ['美食', '探店', '推荐']
-        }))
-      }
-    ];
-    setDemoPlans(march2025Plans);
-  }, []);
-
-  const allPlans = [...plans, ...demoPlans];
-
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
@@ -198,10 +443,19 @@ const PublishPlan: React.FC = () => {
 
       const newPlan: Plan = {
         id: `plan-${Date.now()}`,
+        name: values.name,
         startDate: startDate.format('YYYY-MM-DD'),
         endDate: endDate.format('YYYY-MM-DD'),
         count: values.count,
-        notes: [],
+        notes: Array(values.count).fill(null).map((_, index) => ({
+          id: `note-${Date.now()}-${index}`,
+          title: `笔记 ${index + 1}`,
+          content: '这是一篇小红书笔记内容示例...',
+          imageUrl: values.imageSource === 'manual' && selectedImages[index] 
+            ? selectedImages[index]
+            : `https://picsum.photos/400/400?random=${index}`,
+          tags: ['测试标签']
+        })),
         accountId: values.accountId
       };
       
@@ -209,55 +463,6 @@ const PublishPlan: React.FC = () => {
       setSelectedPlan(newPlan);
       message.success('发布计划创建成功！');
       onClose();
-
-      if (isFirstVisit) {
-        localStorage.setItem('hasVisited', 'true');
-        setLoadingVisible(true);
-        const tips = ['正在帮您寻找合适的笔记素材', '正在为笔记素材配图', '正在编排笔记发布计划'];
-        let currentTipIndex = 0;
-    
-        const tipInterval = setInterval(() => {
-          setLoadingTips(tips[currentTipIndex]);
-          currentTipIndex = (currentTipIndex + 1) % tips.length;
-        }, 2000);
-    
-        setTimeout(() => {
-          clearInterval(tipInterval);
-          setLoadingVisible(false);
-          
-          const updatedPlan = {
-            ...newPlan,
-            notes: Array(values.count).fill(null).map((_, index) => ({
-              id: `note-${Date.now()}-${index}`,
-              title: `笔记 ${index + 1}`,
-              content: '这是一篇小红书笔记内容示例...',
-              imageUrl: values.imageSource === 'manual' && selectedImages[index] 
-                ? selectedImages[index]
-                : `https://picsum.photos/400/400?random=${index}`,
-              tags: ['测试标签']
-            }))
-          };
-          
-          setPlans(plans => plans.map(p => p.id === newPlan.id ? updatedPlan : p));
-          setSelectedPlan(updatedPlan);
-        }, 3000);  // 从6秒改为3秒
-      } else {
-        const updatedPlan = {
-          ...newPlan,
-          notes: Array(values.count).fill(null).map((_, index) => ({
-            id: `note-${Date.now()}-${index}`,
-            title: `笔记 ${index + 1}`,
-            content: '这是一篇小红书笔记内容示例...',
-            imageUrl: values.imageSource === 'manual' && selectedImages[index] 
-              ? selectedImages[index]
-              : `https://picsum.photos/400/400?random=${index}`,
-            tags: ['测试标签']
-          }))
-        };
-        
-        setPlans(plans => plans.map(p => p.id === newPlan.id ? updatedPlan : p));
-        setSelectedPlan(updatedPlan);
-      }
     } catch (error) {
       console.error('表单验证失败:', error);
     }
@@ -359,246 +564,10 @@ const PublishPlan: React.FC = () => {
     });
   };
 
-  const renderAccountList = () => (
-    <div style={{ padding: '24px' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px' }}>账号管理</h2>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => {
-          Modal.confirm({
-            title: '添加账号',
-            width: 600,
-            content: (
-              <Form layout="vertical">
-                <Form.Item
-                  name="nickname"
-                  label="账号昵称"
-                  rules={[{ required: true, message: '请输入账号昵称' }]}
-                >
-                  <Input placeholder="请输入账号昵称" />
-                </Form.Item>
-                <Form.Item
-                  name="avatar"
-                  label="账号头像"
-                  rules={[{ required: true, message: '请上传账号头像' }]}
-                >
-                  <Input placeholder="请输入头像URL" />
-                </Form.Item>
-              </Form>
-            ),
-            onOk: () => {
-              message.success('账号添加成功！');
-            }
-          });
-        }}>
-          添加账号
-        </Button>
-      </div>
-      <List
-        grid={{ gutter: 16, column: 3 }}
-        dataSource={mockAccounts}
-        renderItem={account => (
-          <List.Item>
-            <Card>
-              <Card.Meta
-                avatar={<Avatar size={64} src={account.avatar} />}
-                title={account.nickname}
-                description={
-                  <Space direction="vertical">
-                    <div>粉丝数：{account.followers.toLocaleString()}</div>
-                    <div>笔记数：{account.posts}</div>
-                    <div>
-                      状态：
-                      <span style={{ color: account.status === 'active' ? '#52c41a' : '#ff4d4f' }}>
-                        {account.status === 'active' ? '已激活' : '未激活'}
-                      </span>
-                    </div>
-                  </Space>
-                }
-              />
-            </Card>
-          </List.Item>
-        )}
-      />
-
-      {/* 品牌之声模块 */}
-      <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px', marginTop: '24px' }}>品牌之声</h2>
-      <div style={{ marginBottom: 16 }}>
-        <Space direction="vertical" style={{ width: '100%' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ color: '#666', fontSize: '14px' }}>
-              添加几段最能代表你风格的文案，AI 将学习并模仿你的语气，让每篇笔记都充满你的个性
-            </div>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => {
-                Modal.confirm({
-                  title: '添加品牌文案',
-                  width: 600,
-                  content: (
-                    <Form layout="vertical">
-                      <Form.Item
-                        name="content"
-                        label="文案内容"
-                        rules={[{ required: true, message: '请输入文案内容' }]}
-                      >
-                        <Input.TextArea
-                          placeholder="输入一段最能代表你风格的文案..."
-                          rows={4}
-                        />
-                      </Form.Item>
-                      <Form.Item
-                        name="tags"
-                        label="文案特点"
-                      >
-                        <Select
-                          mode="multiple"
-                          placeholder="选择这段文案的特点"
-                          options={[
-                            { label: '俏皮可爱', value: 'cute' },
-                            { label: '优雅知性', value: 'elegant' },
-                            { label: '专业严谨', value: 'professional' },
-                            { label: '亲切自然', value: 'natural' },
-                            { label: '幽默诙谐', value: 'humorous' }
-                          ]}
-                        />
-                      </Form.Item>
-                    </Form>
-                  ),
-                  onOk: () => {
-                    message.success('文案添加成功！');
-                  }
-                });
-              }}
-            >
-              添加文案
-            </Button>
-          </div>
-          
-          <List
-            itemLayout="vertical"
-            dataSource={[
-              {
-                id: '1',
-                content: '姐妹们！这件风衣真的绝了！穿上去感觉自己就是行走的香奈儿～不过最让我惊喜的是这个小心机：袖口居然暗藏了一圈小珍珠🤫 低调又高级～ 而且面料是可以揉成一团都不会皱的那种！上班通勤约会都能穿，绝对是今年春天的股票，建议买入！'
-              },
-              {
-                id: '2',
-                content: '「生活不是选择题，而是一道填空题。」\n\n今天想和你分享的这个小众香水，就像是为都市生活填上的一抹诗意。\n前调是晨露般的柑橘，中调藏着一片薰衣草田，后调却意外地温暖，像是被阳光晒过的羊毛衫。\n\n没有人规定都市生活该是什么样，我们都在用自己的方式，填写着属于自己的答案。'
-              },
-              {
-                id: '3',
-                content: '最近疯狂被这个小眼影盘种草！！！\n\n不是我说，这个眼影盘绝对是为手残党量身定制的！！\n一个色号就能化出高级感，而且每个色号都标注了使用顺序和部位，连我这种手残都能化出新手咖啡店店主的感觉！！\n\n重点是！！它的壳子是磁吸的！！拿在手上的时候发出"咔哒"一声，爽到起飞！！\n\n姐妹们快去给我买爆它！！'
-              }
-            ]}
-            renderItem={item => (
-              <List.Item
-                style={{
-                  backgroundColor: '#fff',
-                  padding: '16px',
-                  borderRadius: '8px',
-                  marginBottom: '16px'
-                }}
-                actions={[
-                  <Button type="text" key="edit">编辑</Button>,
-                  <Button type="text" danger key="delete">删除</Button>
-                ]}
-              >
-                <div style={{ whiteSpace: 'pre-wrap' }}>{item.content}</div>
-              </List.Item>
-            )}
-          />
-        </Space>
-      </div>
-
-      <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px', marginTop: '24px' }}>偏好设置</h2>
-      <div style={{ marginBottom: 16 }}>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => {
-            Modal.confirm({
-              title: '添加参考笔记',
-              width: 600,
-              content: (
-                <Form layout="vertical">
-                  <Form.Item
-                    name="accountId"
-                    label="选择账号"
-                    rules={[{ required: true, message: '请选择账号' }]}
-                  >
-                    <Select placeholder="请选择账号">
-                      {mockAccounts.map(account => (
-                        <Select.Option key={account.id} value={account.id}>
-                          {account.nickname}
-                        </Select.Option>
-                      ))}
-                    </Select>
-                  </Form.Item>
-                  <Form.Item
-                    name="noteUrl"
-                    label="小红书笔记链接"
-                    rules={[{ required: true, message: '请输入小红书笔记链接' }]}
-                  >
-                    <Input placeholder="请输入小红书笔记链接" />
-                  </Form.Item>
-                </Form>
-              ),
-              onOk: () => {
-                message.success('参考笔记添加成功！');
-              }
-            });
-          }}
-        >
-          添加参考笔记
-        </Button>
-        <div style={{ color: '#666', fontSize: '14px', marginTop: '8px', marginBottom: '16px' }}>
-          添加的参考笔记将帮助智能体更好地理解您需要的内容风格
-        </div>
-      </div>
-      <List
-        grid={{ gutter: 16, column: 3 }}
-        dataSource={[
-          {
-            id: '1',
-            title: '超实用的居家收纳技巧分享',
-            cover: 'https://picsum.photos/400/400?random=1',
-            author: '收纳达人',
-            likes: 2345
-          },
-          {
-            id: '2',
-            title: '春季穿搭必备单品推荐',
-            cover: 'https://picsum.photos/400/400?random=2',
-            author: '时尚博主',
-            likes: 3456
-          }
-        ]}
-        renderItem={note => (
-          <List.Item>
-            <Card
-              hoverable
-              cover={<img alt={note.title} src={note.cover} style={{ height: 200, objectFit: 'cover' }} />}
-            >
-              <Card.Meta
-                title={note.title}
-                description={
-                  <Space direction="vertical">
-                    <div>作者：{note.author}</div>
-                    <div>点赞数：{note.likes}</div>
-                  </Space>
-                }
-              />
-            </Card>
-          </List.Item>
-        )}
-      />
-    </div>
-  );
 
   const dateCellRender = (date: Dayjs) => {
     const dayStr = date.format('YYYY-MM-DD');
-    const dayPosts = allPlans.flatMap(plan => {
+    const dayPosts = plans.flatMap(plan => {
       const startDate = dayjs(plan.startDate);
       const endDate = dayjs(plan.endDate);
       if (date.isAfter(startDate.subtract(1, 'day')) && date.isBefore(endDate.add(1, 'day'))) {
@@ -734,172 +703,164 @@ const PublishPlan: React.FC = () => {
     }
   ];
 
-  const renderTaskView = () => (
-    <div style={{ display: 'flex', height: 'calc(100vh - 100px)' }}>
-      <div style={{ 
-        width: '240px', 
-        minWidth: '200px',
-        maxWidth: '300px',
-        flexShrink: 0,
-        borderRight: '1px solid #f0f0f0', 
-        padding: '12px', 
-        overflow: 'auto',
-        resize: 'horizontal',
-        userSelect: 'none',  // 防止文本选择影响拖动
-        position: 'relative'  // 确保定位正确
-      }}>
-        <List
-          dataSource={allPlans}
-          renderItem={plan => (
-            <List.Item
-              style={{ 
-                cursor: 'pointer', 
-                padding: '4px 0',
-                marginBottom: '8px'
-              }}
-              onClick={() => setSelectedPlan(plan)}
-            >
-              <Card
-                size="small"
-                title={
-                  <div style={{ fontSize: '13px' }}>
-                    <div style={{ marginBottom: '4px' }}>
-                      <span style={{ fontWeight: 'bold' }}>{plan.name || '未命名计划'}</span>
-                    </div>
-                    {plan.accountId && (
-                      <div style={{ marginBottom: '4px' }}>
-                        <Avatar
-                          size="small"
-                          src={mockAccounts.find(acc => acc.id === plan.accountId)?.avatar}
-                        />
-                        <span style={{ marginLeft: '4px', fontSize: '12px' }}>{mockAccounts.find(acc => acc.id === plan.accountId)?.nickname}</span>
-                      </div>
-                    )}
-                    <div style={{ color: '#666', fontSize: '12px' }}>{plan.startDate} 至 {plan.endDate}</div>
-                  </div>
-                }
-                style={{ 
-                  width: '100%', 
-                  backgroundColor: selectedPlan?.id === plan.id ? '#f0f0f0' : 'white',
-                  borderRadius: '6px'
-                }}
-              >
-                <p style={{ fontSize: '12px', margin: 0 }}>计划发布: {plan.count} 篇</p>
-              </Card>
-            </List.Item>
-          )}
-        />
-      </div>
-      <div style={{ flex: 1, padding: '16px' }}>
-        {loadingVisible ? (
+  // 添加handleEditNote函数
+  const handleEditNote = (note: Note) => {
+    setEditingNote(note);
+    setIsEditing(true);
+  };
+
+  const renderTaskView = () => {
+    return (
+      <div style={{ display: 'flex', gap: '24px' }}>
+        {/* 左侧计划列表 */}
+        <div style={{ 
+          width: '260px', 
+          backgroundColor: '#f7f7f7', 
+          padding: '16px',
+          borderRadius: '8px',
+          height: 'calc(100vh - 260px)',
+          overflow: 'auto'
+        }}>
           <div style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            height: '100%',
-            backgroundColor: '#fff',
-            borderRadius: 8,
-            padding: '24px'
+            fontWeight: 'bold', 
+            fontSize: '16px', 
+            marginBottom: '16px',
+            padding: '0 8px'
           }}>
-            <LoadingOutlined style={{ fontSize: '36px', color: '#1890ff', marginBottom: '16px' }} />
-            <div style={{ fontSize: '16px', color: '#666' }}>{loadingTips}</div>
+            发布计划列表
           </div>
-        ) : selectedPlan && (
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h2>{selectedPlan.startDate} 至 {selectedPlan.endDate}的发布计划</h2>
-              <Space>
-                <Button type="primary" onClick={handleConfirmPlan}>确认执行计划</Button>
-              </Space>
+          
+          {plans.map(plan => (
+            <div 
+              key={plan.id}
+              onClick={() => setSelectedPlan(plan)}
+              style={{ 
+                padding: '12px 16px',
+                marginBottom: '12px',
+                backgroundColor: selectedPlan?.id === plan.id ? '#fff' : 'transparent',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                border: selectedPlan?.id === plan.id ? '1px solid #ffffff' : '1px solid transparent',
+                boxShadow: selectedPlan?.id === plan.id ? '0 2px 8px rgba(0, 0, 0, 0.05)' : 'none',
+                transition: 'all 0.3s'
+              }}
+            >
+              <div style={{ 
+                fontWeight: selectedPlan?.id === plan.id ? 'bold' : 'normal',
+                marginBottom: '4px',
+                color: selectedPlan?.id === plan.id ? '#1890ff' : '#333'
+              }}>
+                {plan.name}
+              </div>
+              <div style={{ fontSize: '12px', color: '#999' }}>
+                {plan.startDate} - {plan.endDate}
+              </div>
+              <div style={{ 
+                fontSize: '12px', 
+                color: '#666', 
+                marginTop: '4px',
+                display: 'flex',
+                justifyContent: 'space-between'
+              }}>
+                <span>内容数量: {plan.notes.length}</span>
+                <span>{plan.notes.some(note => note.status === 'published') ? '部分已发布' : '计划中'}</span>
+              </div>
             </div>
-            <Tabs
-              defaultActiveKey="xiaohongshu"
-              items={[
-                {
-                  key: 'xiaohongshu',
-                  label: '小红书',
-                  children: (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
-                      {selectedPlan.notes.map((note, index) => (
-                        <Card key={note.id}>
-                          <img
-                            alt="小红书预览"
-                            src={note.platforms?.xiaohongshu?.imageUrl || note.imageUrl}
-                            style={{ height: 200, width: '100%', objectFit: 'cover', marginBottom: 16 }}
-                          />
-                          <Card.Meta
-                            title={
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span>{note.platforms?.xiaohongshu?.title || note.title}</span>
-                                <Button type="text" danger icon={<DeleteOutlined />} onClick={() => handleDeleteNote(note.id)} />
-                              </div>
-                            }
-                            description={
-                              <div>
-                                <p>{note.platforms?.xiaohongshu?.content || note.content}</p>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-                                  <Button type="link" onClick={() => handleEdit(note, index)}>编辑</Button>
-                                  <span style={{ color: '#666' }}>发布时间：{dayjs(note.scheduledTime || selectedPlan.startDate).format('YYYY-MM-DD HH:mm')}</span>
-                                </div>
-                              </div>
-                            }
-                          />
-                        </Card>
-                      ))}
-                    </div>
-                  )
-                },
-                {
-                  key: 'wechat',
-                  label: '微信',
-                  children: (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
-                      {selectedPlan.notes.map((note, index) => (
-                        <Card key={note.id}>
-                          <img
-                            alt="微信预览"
-                            src={note.platforms?.wechat?.imageUrl || note.imageUrl}
-                            style={{ height: 200, width: '100%', objectFit: 'cover', marginBottom: 16 }}
-                          />
-                          <Card.Meta
-                            title={
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span>{note.platforms?.wechat?.title || note.title}</span>
-                                <Button type="text" danger icon={<DeleteOutlined />} onClick={() => handleDeleteNote(note.id)} />
-                              </div>
-                            }
-                            description={
-                              <div>
-                                <p>{note.platforms?.wechat?.content || note.content}</p>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-                                  <Button type="link" onClick={() => handleEdit(note, index)}>编辑</Button>
-                                  <span style={{ color: '#666' }}>发布时间：{dayjs(note.scheduledTime || selectedPlan.startDate).format('YYYY-MM-DD HH:mm')}</span>
-                                </div>
-                              </div>
-                            }
-                          />
-                        </Card>
-                      ))}
-                    </div>
-                  )
-                }
-              ]}
-            />
-            <div style={{ marginTop: 16, borderTop: '1px solid #f0f0f0', paddingTop: 16 }}>
-              <Space>
-                <Button type="text" icon={<DeleteOutlined />} onClick={() => editingNote && handleDeleteNote(editingNote.id)}>删除</Button>
-                <p style={{ color: '#1890ff' }}>计划发布时间：{selectedPlan.startDate}</p>
-              </Space>
-            </div>
-          </div>
-        )}
+          ))}
+        </div>
+
+        {/* 右侧内容区域 */}
+        <div style={{ flex: 1 }}>
+          {selectedPlan && (
+            <>
+              {/* 确认计划按钮 */}
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'flex-end', 
+                marginBottom: '0px',
+                padding: '0px 16px'
+              }}>
+                <Button type="primary" onClick={handleConfirmPlan}>确认计划</Button>
+              </div>
+              
+              {/* 笔记列表 */}
+              <Tabs defaultActiveKey="xiaohongshu">
+                <Tabs.TabPane tab="小红书" key="xiaohongshu">
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
+                    gap: '8px' 
+                  }}>
+                    {selectedPlan.notes.filter(note => !note.platforms?.wechat || note.platforms?.xiaohongshu).map(note => (
+                      <Card 
+                        key={note.id}
+                        hoverable
+                        style={{ height: '100%' }}
+                        cover={note.imageUrl ? <img alt={note.title} src={note.imageUrl} /> : null}
+                        actions={[
+                          <EditOutlined key="edit" onClick={() => handleEditNote(note)} />,
+                          <DeleteOutlined key="delete" onClick={() => handleDeleteNote(note.id)} />
+                        ]}
+                      >
+                        <Card.Meta
+                          title={note.platforms?.xiaohongshu?.title || note.title}
+                          description={
+                            <Typography.Paragraph ellipsis={{ rows: 2 }}>
+                              {note.platforms?.xiaohongshu?.content || note.content}
+                            </Typography.Paragraph>
+                          }
+                        />
+                        <div style={{ marginTop: '12px', fontSize: '12px', color: '#999' }}>
+                          计划发布时间: {dayjs(note.scheduledTime || selectedPlan.startDate).format('YYYY-MM-DD HH:mm')}
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </Tabs.TabPane>
+                
+                <Tabs.TabPane tab="微信" key="wechat">
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
+                    gap: '8px' 
+                  }}>
+                    {selectedPlan.notes.filter(note => note.platforms?.wechat).map(note => (
+                      <Card 
+                        key={note.id}
+                        hoverable
+                        style={{ height: '100%' }}
+                        cover={note.platforms?.wechat?.imageUrl || note.imageUrl ? 
+                          <img alt={note.title} src={note.platforms?.wechat?.imageUrl || note.imageUrl} /> : null}
+                        actions={[
+                          <EditOutlined key="edit" onClick={() => handleEditNote(note)} />,
+                          <DeleteOutlined key="delete" onClick={() => handleDeleteNote(note.id)} />
+                        ]}
+                      >
+                        <Card.Meta
+                          title={note.platforms?.wechat?.title || note.title}
+                          description={
+                            <Typography.Paragraph ellipsis={{ rows: 2 }}>
+                              {note.platforms?.wechat?.content || note.content}
+                            </Typography.Paragraph>
+                          }
+                        />
+                        <div style={{ marginTop: '8px', fontSize: '12px', color: '#999' }}>
+                          计划发布时间: {dayjs(note.scheduledTime || selectedPlan.startDate).format('YYYY-MM-DD HH:mm')}
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </Tabs.TabPane>
+              </Tabs>
+            </>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderTimelineView = () => {
-    const allNotes = allPlans.flatMap(plan => 
+    const allNotes = plans.flatMap(plan => 
       plan.notes.map((note, index) => ({
         ...note,
         planName: plan.name || '未命名计划',
@@ -942,7 +903,7 @@ const PublishPlan: React.FC = () => {
                 </div>
               }
               style={{
-                paddingBottom: '20px'
+                paddingBottom: '16px'
               }}
             />
           ))}
@@ -1031,7 +992,7 @@ const PublishPlan: React.FC = () => {
   };
 
   const renderListView = () => {
-    const allNotes = allPlans.flatMap(plan => 
+    const allNotes = plans.flatMap(plan => 
       plan.notes.map((note, index) => ({
         ...note,
         planName: plan.name || '未命名计划',
@@ -1141,15 +1102,35 @@ const PublishPlan: React.FC = () => {
 
   return (
     <div className="publish-plan-container">
-      <Tabs
-        activeKey={activeTab}
-        onChange={setActiveTab}
-        tabBarExtraContent={
+      <div style={{ marginBottom: '24px' }}>
+        <Button 
+          type="link" 
+          icon={<LeftOutlined />} 
+          onClick={() => navigate('/accounts')}
+          style={{ padding: 0, marginBottom: '16px' }}
+        >
+          返回账号列表
+        </Button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <Avatar size={64} src={currentAccount?.avatar} />
+            <div>
+              <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '4px' }}>{currentAccount?.nickname}</div>
+              <Space size={16}>
+                <span style={{ color: '#666' }}>
+                  {currentAccount?.followers.toLocaleString()} 粉丝
+                </span>
+                <span style={{ color: '#666' }}>
+                  {currentAccount?.posts} 笔记
+                </span>
+              </Space>
+            </div>
+          </div>
           <Space>
             <Badge count={showBadge ? 1 : 0} offset={[-5, 0]}>
               <Button icon={<RobotOutlined />} onClick={() => {
                 setAiAssistantVisible(true);
-                setShowBadge(false);  // 点击时隐藏徽标
+                setShowBadge(false);
               }}>
                 唤起助手
               </Button>
@@ -1158,210 +1139,253 @@ const PublishPlan: React.FC = () => {
               查看日历
             </Button>
           </Space>
-        }
+        </div>
+      </div>
+
+      <Tabs
+        activeKey={activeTab}
+        onChange={setActiveTab}
         items={[
           {
             key: 'overview',
-            label: '概览',
+            label: '数据概览',
             children: (
-              <div style={{ padding: '24px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
-                    <h2 style={{ margin: 0 }}>上周核心数据</h2>
-                    <Select
-                      defaultValue={mockAccounts[0].id}
-                      style={{ width: 200 }}
-                      options={mockAccounts.map(account => ({
-                        value: account.id,
-                        label: account.nickname
-                      }))}
-                    />
-                  </div>
-                  <div style={{ marginBottom: '32px' }}>
-                  <Row gutter={[16, 16]}>
-                    <Col span={8}>
-                      <Card title="商品上新" bordered={false}>
-                        <List
-                          dataSource={[
-                            { title: '新款春季连衣裙', views: 2341, likes: 89, comments: 15, saves: 45 },
-                            { title: '小众设计感包包', views: 1892, likes: 76, comments: 12, saves: 38 }
-                          ]}
-                          renderItem={item => (
-                            <List.Item>
-                              <div style={{ width: '100%' }}>
-                                <div style={{ marginBottom: '8px' }}>{item.title}</div>
-                                <Row gutter={16}>
-                                  <Col span={6}>
-                                    <Statistic title="浏览" value={item.views} />
-                                  </Col>
-                                  <Col span={6}>
-                                    <Statistic title="点赞" value={item.likes} />
-                                  </Col>
-                                  <Col span={6}>
-                                    <Statistic title="评论" value={item.comments} />
-                                  </Col>
-                                  <Col span={6}>
-                                    <Statistic title="收藏" value={item.saves} />
-                                  </Col>
-                                </Row>
-                              </div>
-                            </List.Item>
-                          )}
-                        />
-                      </Card>
-                    </Col>
-                    <Col span={8}>
-                      <Card title="活动推广" bordered={false}>
-                        <List
-                          dataSource={[
-                            { title: '春季焕新活动', views: 3421, likes: 156, comments: 42, saves: 89 },
-                            { title: '会员日特惠', views: 2876, likes: 134, comments: 28, saves: 67 }
-                          ]}
-                          renderItem={item => (
-                            <List.Item>
-                              <div style={{ width: '100%' }}>
-                                <div style={{ marginBottom: '8px' }}>{item.title}</div>
-                                <Row gutter={16}>
-                                  <Col span={6}>
-                                    <Statistic title="浏览" value={item.views} />
-                                  </Col>
-                                  <Col span={6}>
-                                    <Statistic title="点赞" value={item.likes} />
-                                  </Col>
-                                  <Col span={6}>
-                                    <Statistic title="评论" value={item.comments} />
-                                  </Col>
-                                  <Col span={6}>
-                                    <Statistic title="收藏" value={item.saves} />
-                                  </Col>
-                                </Row>
-                              </div>
-                            </List.Item>
-                          )}
-                        />
-                      </Card>
-                    </Col>
-                    <Col span={8}>
-                      <Card title="日常宣发" bordered={false}>
-                        <List
-                          dataSource={[
-                            { title: '穿搭日记分享', views: 1987, likes: 87, comments: 23, saves: 42 },
-                            { title: '生活美学记录', views: 1654, likes: 65, comments: 18, saves: 31 }
-                          ]}
-                          renderItem={item => (
-                            <List.Item>
-                              <div style={{ width: '100%' }}>
-                                <div style={{ marginBottom: '8px' }}>{item.title}</div>
-                                <Row gutter={16}>
-                                  <Col span={6}>
-                                    <Statistic title="浏览" value={item.views} />
-                                  </Col>
-                                  <Col span={6}>
-                                    <Statistic title="点赞" value={item.likes} />
-                                  </Col>
-                                  <Col span={6}>
-                                    <Statistic title="评论" value={item.comments} />
-                                  </Col>
-                                  <Col span={6}>
-                                    <Statistic title="收藏" value={item.saves} />
-                                  </Col>
-                                </Row>
-                              </div>
-                            </List.Item>
-                          )}
-                        />
-                      </Card>
-                    </Col>
-                  </Row>
-                  <Card style={{ marginTop: '16px' }} title="深度复盘">
-                    <List
-                      dataSource={[
-                        '商品上新类笔记互动率偏低，建议增加实拍图片和细节展示，提升产品信息的真实感和说服力',
-                        '活动推广类笔记表现最好，可以适当增加发布频率，并注意活动信息的清晰传达',
-                        '日常宣发类笔记互动质量较好，建议保持个人化视角，增加情感共鸣'
-                      ]}
-                      renderItem={item => <List.Item>{item}</List.Item>}
-                    />
-                  </Card>
-                </div>
-              
-                <h3 style={{ marginBottom: 16, marginTop: 24 }}>下周计划</h3>
-                <Card
-                  title="热点嗅探"
-                  extra={<Tooltip title="根据账号内容特征，智能推荐相关热点话题"><QuestionCircleOutlined /></Tooltip>}
-                  style={{ marginBottom: 16 }}
+              <div>
+                <Card 
+                  title={
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '16px' }}>待审核内容</span>
+                      <span style={{ color: '#1890ff', fontWeight: 'normal', fontSize: '14px' }}>您有 <b>3</b> 篇内容待审核</span>
+                    </div>
+                  } 
+                  style={{ marginBottom: '24px' }}
                 >
-                  <div style={{ marginBottom: 16, color: '#1890ff' }}>
-                    最近发现5篇热点与品牌相关度较高，预计将在近期创作以下内容
-                  </div>
                   <List
+                    itemLayout="horizontal"
                     dataSource={[
-                      { topic: '春日樱花季', relevance: 95, expectedTime: '2024-03-21 12:00', content: '赏樱踏青穿搭灵感，搭配春日限定饮品', hot: '123w' },
-                      { topic: '断舍离整理术', relevance: 88, expectedTime: '2024-03-21 15:00', content: '春季换季收纳整理指南', hot: '98w' },
-                      { topic: '春季美妆趋势', relevance: 85, expectedTime: '2024-03-21 18:00', content: '2024春季妆容趋势解析', hot: '156w' },
-                      { topic: '轻食食谱', relevance: 82, expectedTime: '2024-03-22 10:00', content: '春季轻食搭配提案', hot: '78w' },
-                      { topic: '手作DIY', relevance: 78, expectedTime: '2024-03-22 14:00', content: '春季手工DIY创意分享', hot: '89w' }
+                      {
+                        id: 'review1',
+                        title: '春季新款分享：这件连衣裙也太显瘦了',
+                        scheduledTime: '2024-03-22 10:00:00',
+                        imageUrl: 'https://picsum.photos/400/400?random=101'
+                      },
+                      {
+                        id: 'review2',
+                        title: '我的日常护肤步骤大公开',
+                        scheduledTime: '2024-03-23 15:30:00',
+                        imageUrl: 'https://picsum.photos/400/400?random=102'
+                      },
+                      {
+                        id: 'review3',
+                        title: '最近超爱的小众咖啡店推荐',
+                        scheduledTime: '2024-03-24 19:00:00',
+                        imageUrl: 'https://picsum.photos/400/400?random=103'
+                      }
                     ]}
-                    renderItem={item => (
-                      <List.Item>
-                        <div style={{ width: '100%' }}>
-                          <Row align="middle" justify="space-between">
-                            <Col span={6}>
-                              <Space>
-                                <div style={{ fontSize: '16px', fontWeight: 'bold' }}>{item.topic}</div>
-                                <div style={{ color: '#ff4d4f' }}>{item.hot}</div>
-                              </Space>
-                            </Col>
-                            <Col span={4}>
-                              <div style={{ color: '#1890ff' }}>相关度：{item.relevance}%</div>
-                            </Col>
-                            <Col span={7}>
-                              <div style={{ color: '#666' }}>预计发布：{item.expectedTime}</div>
-                            </Col>
-                            <Col span={7}>
-                              <div style={{ color: '#666' }}>预期内容：{item.content}</div>
-                            </Col>
-                          </Row>
-                        </div>
+                    renderItem={(item) => (
+                      <List.Item
+                        actions={[
+                          <Button type="primary" size="small" key="review">审核</Button>
+                        ]}
+                      >
+                        <List.Item.Meta
+                          avatar={<Avatar shape="square" size={64} src={item.imageUrl} />}
+                          title={item.title}
+                          description={`计划发布时间：${item.scheduledTime}`}
+                        />
                       </List.Item>
                     )}
                   />
                 </Card>
-                <Card
-                  title="下周发布计划"
-                  style={{ marginBottom: 16 }}
-                >
-                  <Row gutter={16}>
-                    <Col span={6}>
-                      <Statistic title="预计发布笔记" value={12} suffix="篇" />
-                    </Col>
-                    <Col span={18}>
-                      <div style={{ marginBottom: 16, color: '#666' }}>
-                        <p>根据本周数据分析和内容规划，下周将重点关注以下方面：</p>
-                        <ul style={{ paddingLeft: 20 }}>
-                          <li>本周微商城新上架春季新品系列尚未进行推广，计划发布5篇笔记重点展示新品特色和搭配方案</li>
-                          <li>即将开展的春季焕新促销活动需要预热，安排3篇笔记进行活动预告和爆品推荐</li>
-                          <li>基于用户画像分析，增加4篇轻松生活类内容，提升账号日常互动率</li>
-                        </ul>
-                      </div>
-                      <List
-                        size="small"
-                        dataSource={[
-                          { type: '商品上新', count: 5, interaction: '预期互动率 4.2%' },
-                          { type: '活动推广', count: 3, interaction: '预期互动率 3.8%' },
-                          { type: '日常宣发', count: 4, interaction: '预期互动率 3.5%' }
-                        ]}
-                        renderItem={item => (
-                          <List.Item>
-                            <Row style={{ width: '100%' }}>
-                              <Col span={8}>{item.type}</Col>
-                              <Col span={8}>{item.count} 篇</Col>
-                              <Col span={8}>{item.interaction}</Col>
-                            </Row>
-                          </List.Item>
-                        )}
+
+                <Row gutter={[24, 24]}>
+                  <Col span={6}>
+                    <Card>
+                      <Statistic
+                        title="本周涨粉"
+                        value={currentAccount?.growth?.followers || 0}
+                        prefix={<RiseOutlined />}
+                        valueStyle={{ color: '#3f8600' }}
                       />
-                    </Col>
-                  </Row>
+                      <div style={{ color: '#666', fontSize: '12px', marginTop: '8px' }}>
+                        较上周 {(currentAccount?.growth?.followers || 0) > 0 ? '增长' : '减少'} {Math.abs(currentAccount?.growth?.followers || 0)}
+                      </div>
+                    </Card>
+                  </Col>
+                  <Col span={6}>
+                    <Card>
+                      <Statistic
+                        title="本周阅读"
+                        value={currentAccount?.growth?.views || 0}
+                      />
+                      <div style={{ color: '#666', fontSize: '12px', marginTop: '8px' }}>
+                        较上周增长 12.5%
+                      </div>
+                    </Card>
+                  </Col>
+                  <Col span={6}>
+                    <Card>
+                      <Statistic
+                        title="本周互动"
+                        value={(currentAccount?.growth?.likes || 0) + (currentAccount?.growth?.comments || 0)}
+                      />
+                      <div style={{ color: '#666', fontSize: '12px', marginTop: '8px' }}>
+                        较上周增长 8.3%
+                      </div>
+                    </Card>
+                  </Col>
+                  <Col span={6}>
+                    <Card>
+                      <Statistic
+                        title="本周GMV"
+                        value={83907}
+                        prefix="¥"
+                      />
+                      <div style={{ color: '#666', fontSize: '12px', marginTop: '8px' }}>
+                        较上周增长 23.5%
+                      </div>
+                    </Card>
+                  </Col>
+                </Row>
+
+                <Card title="最近发布内容数据" style={{ marginTop: '24px' }}>
+                  <Table
+                    dataSource={mockContentData}
+                    columns={[
+                      {
+                        title: '内容标题',
+                        dataIndex: 'title',
+                        key: 'title',
+                      },
+                      {
+                        title: '发布时间',
+                        dataIndex: 'publishTime',
+                        key: 'publishTime',
+                      },
+                      {
+                        title: '浏览',
+                        dataIndex: 'views',
+                        key: 'views',
+                        render: (views: number) => views.toLocaleString()
+                      },
+                      {
+                        title: '点赞',
+                        dataIndex: 'likes',
+                        key: 'likes',
+                        render: (likes: number) => likes.toLocaleString()
+                      },
+                      {
+                        title: '评论',
+                        dataIndex: 'comments',
+                        key: 'comments',
+                        render: (comments: number) => comments.toLocaleString()
+                      },
+                      {
+                        title: '收藏',
+                        dataIndex: 'saves',
+                        key: 'saves',
+                        render: (saves: number) => saves.toLocaleString()
+                      },
+                      {
+                        title: '带货转化',
+                        key: 'conversion',
+                        render: (_, record: ContentData) => (
+                          <span>
+                            ¥{record.products.reduce((sum, product) => sum + product.revenue, 0).toLocaleString()}
+                          </span>
+                        )
+                      }
+                    ]}
+                  />
+                </Card>
+
+                <Card title="下周发布计划" style={{ marginTop: '24px' }}>
+                  <div className="calendar-week-view" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    {Array.from({ length: 7 }).map((_, index) => {
+                      const date = dayjs().add(index, 'day');
+                      return (
+                        <div 
+                          key={index} 
+                          className="day-column"
+                          style={{ 
+                            flex: 1, 
+                            padding: '8px', 
+                            textAlign: 'center',
+                            borderRight: index < 6 ? '1px solid #f0f0f0' : 'none',
+                            minHeight: '200px'
+                          }}
+                        >
+                          <div style={{ 
+                            padding: '8px 0', 
+                            borderBottom: '1px solid #f0f0f0', 
+                            marginBottom: '8px',
+                            fontWeight: date.format('YYYY-MM-DD') === dayjs().format('YYYY-MM-DD') ? 'bold' : 'normal',
+                            color: date.day() === 0 || date.day() === 6 ? '#1890ff' : 'inherit'
+                          }}>
+                            <div>{date.format('MM/DD')}</div>
+                            <div style={{ fontSize: '12px', color: '#999' }}>{date.format('ddd')}</div>
+                          </div>
+                          
+                          {/* 模拟数据 */}
+                          {index === 1 && (
+                            <div className="plan-item" style={{ 
+                              backgroundColor: '#e6f7ff', 
+                              padding: '8px', 
+                              borderRadius: '4px',
+                              marginBottom: '8px',
+                              fontSize: '12px',
+                              textAlign: 'left'
+                            }}>
+                              <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>春季新品分享</div>
+                              <div style={{ color: '#666' }}>10:00 发布</div>
+                            </div>
+                          )}
+                          
+                          {index === 3 && (
+                            <div className="plan-item" style={{ 
+                              backgroundColor: '#f6ffed', 
+                              padding: '8px', 
+                              borderRadius: '4px',
+                              marginBottom: '8px',
+                              fontSize: '12px',
+                              textAlign: 'left'
+                            }}>
+                              <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>护肤品测评</div>
+                              <div style={{ color: '#666' }}>15:30 发布</div>
+                            </div>
+                          )}
+                          
+                          {index === 3 && (
+                            <div className="plan-item" style={{ 
+                              backgroundColor: '#fff7e6', 
+                              padding: '8px', 
+                              borderRadius: '4px',
+                              marginBottom: '8px',
+                              fontSize: '12px',
+                              textAlign: 'left'
+                            }}>
+                              <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>搭配技巧分享</div>
+                              <div style={{ color: '#666' }}>20:00 发布</div>
+                            </div>
+                          )}
+                          
+                          {index === 5 && (
+                            <div className="plan-item" style={{ 
+                              backgroundColor: '#fff2f0', 
+                              padding: '8px', 
+                              borderRadius: '4px',
+                              marginBottom: '8px',
+                              fontSize: '12px',
+                              textAlign: 'left'
+                            }}>
+                              <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>断桥奶茶探店</div>
+                              <div style={{ color: '#666' }}>12:30 发布</div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </Card>
               </div>
             )
@@ -1372,14 +1396,14 @@ const PublishPlan: React.FC = () => {
             children: (
               <div>
                 <div style={{ 
-                  padding: '16px 16px 0',
+                  padding: '6px 16px 6px', // 减小上下padding
                   borderBottom: '1px solid #f0f0f0',
-                  marginBottom: '16px',
+                  marginBottom: '8px', // 减小下方间距
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center'
                 }}>
-                  <Space>
+                  <Space size="small"> {/* 减小按钮之间的间距 */}
                     <Button type="primary" icon={<PlusOutlined />} onClick={showDrawer}>
                       智能内容规划
                     </Button>
@@ -1393,9 +1417,9 @@ const PublishPlan: React.FC = () => {
                     optionType="button"
                     buttonStyle="solid"
                   >
-                    <Radio.Button value="task">任务视图</Radio.Button>
-                    <Radio.Button value="timeline">时间轴视图</Radio.Button>
-                    <Radio.Button value="list">列表视图</Radio.Button>
+                    <Radio.Button value="task"><AppstoreOutlined /></Radio.Button>
+                    <Radio.Button value="timeline"><UnorderedListOutlined /></Radio.Button>
+                    <Radio.Button value="list"><TableOutlined /></Radio.Button>
                   </Radio.Group>
                 </div>
                 {viewMode === 'task' ? renderTaskView() : viewMode === 'timeline' ? renderTimelineView() : renderListView()}
@@ -1403,15 +1427,264 @@ const PublishPlan: React.FC = () => {
             )
           },
           {
-            key: 'account',
-            label: '账号管理',
-            children: renderAccountList()
+            key: 'settings',
+            label: '个性化设置',
+            children: (
+              <div>
+                <Card title="品牌之声设置" style={{ marginBottom: '24px' }}>
+                  <div style={{ marginBottom: '16px', color: '#666' }}>
+                    请添加品牌之声，AI将模拟这些语气和风格特点为您创作内容。添加得越详细，生成的内容越符合品牌调性。
+                  </div>
+                  
+                  <Form layout="vertical">
+                    <Form.List name="brandVoice" initialValue={[{ content: '' }]}>
+                      {(fields, { add, remove }) => (
+                        <>
+                          {fields.map(({ key, name, ...restField }) => (
+                            <Form.Item key={key} style={{ marginBottom: '16px' }}>
+                              <div style={{ display: 'flex', gap: '8px' }}>
+                                <Input.TextArea 
+                                  {...restField}
+                                  placeholder="例如：我们的内容风格偏向于专业但不失亲和力，会使用'美丽''优雅'等正面词汇，避免使用网络流行语..." 
+                                  rows={4}
+                                  style={{ flex: 1 }}
+                                  defaultValue={key === 0 ? "「生活不是选择题，而是一道填空题。」今天想和你分享的这个小众香水，就像是为都市生活填上的一抹诗意。前调是晨露般的柑橘，中调藏着一片薰衣草田，后调却意外地温暖，像是被阳光晒过的羊毛衫。没有人规定都市生活该是什么样，我们都在用自己的方式，填写着属于自己的答案。" : ""}
+                                />
+                                {fields.length > 1 && (
+                                  <Button 
+                                    type="text" 
+                                    danger 
+                                    icon={<DeleteOutlined />}
+                                    onClick={() => remove(name)} 
+                                    style={{ alignSelf: 'center' }}
+                                  />
+                                )}
+                              </div>
+                            </Form.Item>
+                          ))}
+                          <Form.Item>
+                            <Button 
+                              type="dashed" 
+                              onClick={() => add()} 
+                              block 
+                              icon={<PlusOutlined />}
+                            >
+                              添加更多品牌之声
+                            </Button>
+                          </Form.Item>
+                        </>
+                      )}
+                    </Form.List>
+                  </Form>
+                </Card>
+
+                <Card title="Agent设置" style={{ marginBottom: '24px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
+                    <Switch 
+                      checked={autoGenerateContent} 
+                      onChange={setAutoGenerateContent} 
+                      style={{ marginRight: '16px' }}
+                    />
+                    <div>
+                      <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '4px' }}>
+                        AI自动生产内容
+                      </div>
+                      <div style={{ color: '#666', fontSize: '14px' }}>
+                        开启后，AI将根据您的设置自动循环生成内容，无需手动干预
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+
+                {autoGenerateContent && (
+                  <>
+                    <Card title="发布策略设置" style={{ marginBottom: '24px' }}>
+                      <Form layout="vertical">
+                        <h3 style={{ marginBottom: '16px', fontWeight: 'bold' }}>AI自动创作配置</h3>
+                        
+                        <Row gutter={24}>
+                          <Col span={12}>
+                            <Form.Item 
+                              label="AI提前几天通知我审批内容" 
+                              name="notificationDays"
+                              tooltip="设置AI在内容发布前多少天提醒您审批内容"
+                              initialValue={3}
+                            >
+                              <Select>
+                                <Select.Option value={1}>提前1天</Select.Option>
+                                <Select.Option value={2}>提前2天</Select.Option>
+                                <Select.Option value={3}>提前3天</Select.Option>
+                                <Select.Option value={5}>提前5天</Select.Option>
+                                <Select.Option value={7}>提前7天</Select.Option>
+                              </Select>
+                            </Form.Item>
+                          </Col>
+                          <Col span={12}>
+                            <Form.Item 
+                              label="一次性审批几天的发布内容" 
+                              name="batchApprovalDays"
+                              tooltip="设置每次审批包含几天的内容"
+                              initialValue={7}
+                            >
+                              <Select>
+                                <Select.Option value={3}>3天内容</Select.Option>
+                                <Select.Option value={5}>5天内容</Select.Option>
+                                <Select.Option value={7}>7天内容</Select.Option>
+                                <Select.Option value={10}>10天内容</Select.Option>
+                                <Select.Option value={14}>14天内容</Select.Option>
+                              </Select>
+                            </Form.Item>
+                          </Col>
+                        </Row>
+                        
+                        <Row gutter={24}>
+                          <Col span={12}>
+                            <Form.Item 
+                              label="频率" 
+                              name="publishFrequency"
+                              tooltip="设置笔记发布的频率"
+                              initialValue="daily"
+                            >
+                              <Select>
+                                <Select.Option value="daily">每日一篇</Select.Option>
+                                <Select.Option value="alternate">两天一篇</Select.Option>
+                                <Select.Option value="twice">每日两篇</Select.Option>
+                                <Select.Option value="weekly">每周三篇</Select.Option>
+                              </Select>
+                            </Form.Item>
+                          </Col>
+                          <Col span={12}>
+                            <Form.Item 
+                              label="发布时间" 
+                              name="publishTime"
+                              tooltip="设置笔记发布的最佳时间"
+                              initialValue={['10:00', '20:00']}
+                            >
+                              <Select mode="multiple">
+                                <Select.Option value="10:00">上午 10:00</Select.Option>
+                                <Select.Option value="12:00">中午 12:00</Select.Option>
+                                <Select.Option value="15:00">下午 15:00</Select.Option>
+                                <Select.Option value="20:00">晚上 20:00</Select.Option>
+                                <Select.Option value="22:00">晚上 22:00</Select.Option>
+                              </Select>
+                            </Form.Item>
+                          </Col>
+                        </Row>
+                      </Form>
+                    </Card>
+
+                    <Card title="创作偏好设置" style={{ marginBottom: '24px' }}>
+                      <Form layout="vertical">
+                        <Form.Item 
+                          label="图片源设置" 
+                          name="imageSource"
+                          tooltip="设置AI创作内容时使用的图片分类"
+                          extra="AI将自动在您选择的分类下挑选最适合内容的图片"
+                          initialValue={['时尚', '美妆']}
+                        >
+                          <Select mode="multiple">
+                            <Select.Option value="时尚">时尚穿搭</Select.Option>
+                            <Select.Option value="美妆">美妆护肤</Select.Option>
+                            <Select.Option value="美食">美食探店</Select.Option>
+                            <Select.Option value="家居">家居生活</Select.Option>
+                            <Select.Option value="旅行">旅行风景</Select.Option>
+                            <Select.Option value="数码">数码产品</Select.Option>
+                          </Select>
+                        </Form.Item>
+
+                        <Form.Item
+                          label="主推商品配置"
+                          name="featuredProducts"
+                          tooltip="设置AI创作内容时优先挂载的商品"
+                          extra="AI将根据内容主题自动从列表中挑选最相关的商品进行挂载"
+                        >
+                          <Table
+                            dataSource={[
+                              {
+                                key: '1',
+                                name: '设计感泡泡袖连衣裙',
+                                category: '服装',
+                                price: 299,
+                                priority: 'high'
+                              },
+                              {
+                                key: '2',
+                                name: '多效修护眼霜',
+                                category: '护肤',
+                                price: 219,
+                                priority: 'medium'
+                              },
+                              {
+                                key: '3',
+                                name: '百搭小白鞋',
+                                category: '鞋包',
+                                price: 399,
+                                priority: 'high'
+                              }
+                            ]}
+                            columns={[
+                              {
+                                title: '商品名称',
+                                dataIndex: 'name',
+                                key: 'name',
+                              },
+                              {
+                                title: '分类',
+                                dataIndex: 'category',
+                                key: 'category',
+                              },
+                              {
+                                title: '价格',
+                                dataIndex: 'price',
+                                key: 'price',
+                                render: (price: number) => `¥${price}`
+                              },
+                              {
+                                title: '优先级',
+                                dataIndex: 'priority',
+                                key: 'priority',
+                                render: (priority: string) => (
+                                  <Select 
+                                    defaultValue={priority} 
+                                    style={{ width: 100 }}
+                                    options={[
+                                      { value: 'high', label: '高' },
+                                      { value: 'medium', label: '中' },
+                                      { value: 'low', label: '低' }
+                                    ]}
+                                  />
+                                )
+                              },
+                              {
+                                title: '操作',
+                                key: 'action',
+                                render: () => (
+                                  <Space>
+                                    <Button type="text" danger icon={<DeleteOutlined />} />
+                                  </Space>
+                                )
+                              }
+                            ]}
+                            pagination={false}
+                            footer={() => (
+                              <Button type="dashed" block icon={<PlusOutlined />}>
+                                添加商品
+                              </Button>
+                            )}
+                          />
+                        </Form.Item>
+                      </Form>
+                    </Card>
+                  </>
+                )}
+              </div>
+            )
           }
         ]}
       />
 
       <Drawer
-        title="创建发布计划"
+        title="智能内容规划"
         placement="right"
         onClose={onClose}
         open={drawerVisible}
@@ -1427,37 +1700,11 @@ const PublishPlan: React.FC = () => {
       >
         <Form form={form} layout="vertical">
           <Form.Item
-            name="accountId"
-            label="选择账号"
-            rules={[{ required: true, message: '请选择发布账号' }]}
-          >
-            <Select
-              placeholder="请选择发布账号"
-              onChange={(value) => setSelectedAccount(value)}
-            >
-              {mockAccounts.filter(account => account.status === 'active').map(account => (
-                <Select.Option key={account.id} value={account.id}>
-                  <Space>
-                    <Avatar size="small" src={account.avatar} />
-                    {account.nickname}
-                  </Space>
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-          <Form.Item
-            name="name"
-            label="计划名称"
-            rules={[{ required: true, message: '请输入计划名称' }]}
-          >
-            <Input placeholder="请输入计划名称" />
-          </Form.Item>
-          <Form.Item
             name="dateRange"
             label="发布时间周期"
             rules={[{ required: true, message: '请选择发布时间周期' }]}
           >
-            <DatePicker.RangePicker />
+            <DatePicker.RangePicker style={{ width: '100%' }} />
           </Form.Item>
 
           <Form.Item
@@ -1524,14 +1771,6 @@ const PublishPlan: React.FC = () => {
             </Form.Item>
           )}
 
-          <Form.Item
-            name="count"
-            label="计划发布数量"
-            rules={[{ required: true, message: '请输入计划发布数量' }]}
-          >
-            <InputNumber min={1} max={100} style={{ width: '100%' }} />
-          </Form.Item>
-
           <Form.Item>
             <Space size="middle" style={{ marginBottom: 16 }}>
               发布频率：
@@ -1566,6 +1805,139 @@ const PublishPlan: React.FC = () => {
                 一天两篇
               </Button>
             </Space>
+          </Form.Item>
+
+          <Form.Item
+            name="contentStyle"
+            label="内容风格"
+            rules={[{ required: true, message: '请选择内容风格' }]}
+            initialValue="casual"
+          >
+            <Radio.Group style={{ width: '100%' }}>
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <Radio value="casual">轻松随意</Radio>
+                <Radio value="professional">专业正式</Radio>
+                <Radio value="artistic">感性文艺</Radio>
+                <Radio value="humorous">幽默诙谐</Radio>
+              </Space>
+            </Radio.Group>
+          </Form.Item>
+
+          <Form.Item
+            name="mountType"
+            label="挂载配置"
+            rules={[{ required: true, message: '请选择挂载配置' }]}
+            initialValue="none"
+          >
+            <Radio.Group 
+              style={{ width: '100%' }}
+              onChange={(e) => {
+                if (e.target.value === 'specific') {
+                  // 显示商品选择弹窗
+                  setTimeout(() => {
+                    Modal.info({
+                      title: '选择推荐商品',
+                      width: 800,
+                      content: (
+                        <div>
+                          <Table
+                            dataSource={[
+                              {
+                                key: '1',
+                                name: '设计感泡泡袖连衣裙',
+                                category: '服装',
+                                price: 299,
+                                selected: false
+                              },
+                              {
+                                key: '2',
+                                name: '多效修护眼霜',
+                                category: '护肤',
+                                price: 219,
+                                selected: false
+                              },
+                              {
+                                key: '3',
+                                name: '百搭小白鞋',
+                                category: '鞋包',
+                                price: 399,
+                                selected: false
+                              },
+                              {
+                                key: '4',
+                                name: '轻奢小众香水',
+                                category: '美妆',
+                                price: 469,
+                                selected: false
+                              },
+                              {
+                                key: '5',
+                                name: '纯棉舒适T恤',
+                                category: '服装',
+                                price: 129,
+                                selected: false
+                              }
+                            ]}
+                            columns={[
+                              {
+                                title: '选择',
+                                key: 'select',
+                                render: (_) => (
+                                  <Checkbox />
+                                )
+                              },
+                              {
+                                title: '商品名称',
+                                dataIndex: 'name',
+                                key: 'name'
+                              },
+                              {
+                                title: '分类',
+                                dataIndex: 'category',
+                                key: 'category'
+                              },
+                              {
+                                title: '价格',
+                                dataIndex: 'price',
+                                key: 'price',
+                                render: (price) => `¥${price}`
+                              }
+                            ]}
+                            pagination={false}
+                            rowSelection={{
+                              type: 'checkbox',
+                              onChange: (selectedRowKeys, selectedRows) => {
+                                console.log(`selectedRowKeys: ${selectedRowKeys}`, 'selectedRows: ', selectedRows);
+                              }
+                            }}
+                          />
+                        </div>
+                      ),
+                      onOk() {
+                        message.success('已选择3件商品');
+                      }
+                    });
+                  }, 300);
+                }
+              }}
+            >
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <Radio value="none">不挂载商品或POI</Radio>
+                <Radio value="auto">自动推荐热卖商品</Radio>
+                <Radio value="specific">指定推荐商品</Radio>
+                <Radio value="poi">挂载POI地点</Radio>
+              </Space>
+            </Radio.Group>
+          </Form.Item>
+
+          <Form.Item
+            name="additionalInstructions"
+            label="补充指令"
+          >
+            <Input.TextArea 
+              placeholder="可以输入额外的AI指令，例如：需要强调产品的哪些特点、内容重点方向等..." 
+              rows={4} 
+            />
           </Form.Item>
         </Form>
       </Drawer>
