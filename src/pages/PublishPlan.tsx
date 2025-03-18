@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Drawer, Form, DatePicker, Space, List, Card, Modal, message, Input, Radio, Tooltip, Calendar, Tabs, Avatar, Select, Timeline, Table, Badge, Row, Col, Statistic, Checkbox, Switch, Typography } from 'antd';
+import { Button, Drawer, Form, DatePicker, Space, List, Card, Modal, message, Input, Radio, Tooltip, Calendar, Tabs, Avatar, Select, Timeline, Table, Badge, Row, Col, Statistic, Checkbox, Switch, Typography, Tag } from 'antd';
 import { PlusOutlined, DeleteOutlined, QuestionCircleOutlined, LoadingOutlined, CalendarOutlined, RobotOutlined, LeftOutlined, RightOutlined, ShareAltOutlined, HeartOutlined, MessageOutlined, StarOutlined, EllipsisOutlined, RiseOutlined, AppstoreOutlined, UnorderedListOutlined, TableOutlined, EditOutlined } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
@@ -782,74 +782,42 @@ const PublishPlan: React.FC = () => {
               </div>
               
               {/* 笔记列表 */}
-              <Tabs defaultActiveKey="xiaohongshu">
-                <Tabs.TabPane tab="小红书" key="xiaohongshu">
-                  <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
-                    gap: '8px' 
-                  }}>
-                    {selectedPlan.notes.filter(note => !note.platforms?.wechat || note.platforms?.xiaohongshu).map(note => (
-                      <Card 
-                        key={note.id}
-                        hoverable
-                        style={{ height: '100%' }}
-                        cover={note.imageUrl ? <img alt={note.title} src={note.imageUrl} /> : null}
-                        actions={[
-                          <EditOutlined key="edit" onClick={() => handleEditNote(note)} />,
-                          <DeleteOutlined key="delete" onClick={() => handleDeleteNote(note.id)} />
-                        ]}
-                      >
-                        <Card.Meta
-                          title={note.platforms?.xiaohongshu?.title || note.title}
-                          description={
-                            <Typography.Paragraph ellipsis={{ rows: 2 }}>
-                              {note.platforms?.xiaohongshu?.content || note.content}
-                            </Typography.Paragraph>
-                          }
-                        />
-                        <div style={{ marginTop: '12px', fontSize: '12px', color: '#999' }}>
-                          计划发布时间: {dayjs(note.scheduledTime || selectedPlan.startDate).format('YYYY-MM-DD HH:mm')}
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                </Tabs.TabPane>
-                
-                <Tabs.TabPane tab="微信" key="wechat">
-                  <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
-                    gap: '8px' 
-                  }}>
-                    {selectedPlan.notes.filter(note => note.platforms?.wechat).map(note => (
-                      <Card 
-                        key={note.id}
-                        hoverable
-                        style={{ height: '100%' }}
-                        cover={note.platforms?.wechat?.imageUrl || note.imageUrl ? 
-                          <img alt={note.title} src={note.platforms?.wechat?.imageUrl || note.imageUrl} /> : null}
-                        actions={[
-                          <EditOutlined key="edit" onClick={() => handleEditNote(note)} />,
-                          <DeleteOutlined key="delete" onClick={() => handleDeleteNote(note.id)} />
-                        ]}
-                      >
-                        <Card.Meta
-                          title={note.platforms?.wechat?.title || note.title}
-                          description={
-                            <Typography.Paragraph ellipsis={{ rows: 2 }}>
-                              {note.platforms?.wechat?.content || note.content}
-                            </Typography.Paragraph>
-                          }
-                        />
-                        <div style={{ marginTop: '8px', fontSize: '12px', color: '#999' }}>
-                          计划发布时间: {dayjs(note.scheduledTime || selectedPlan.startDate).format('YYYY-MM-DD HH:mm')}
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                </Tabs.TabPane>
-              </Tabs>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
+                gap: '16px' 
+              }}>
+                {selectedPlan.notes.map(note => (
+                  <Card 
+                    key={note.id}
+                    hoverable
+                    style={{ height: '100%' }}
+                    cover={note.imageUrl ? <img alt={note.title} src={note.imageUrl} /> : null}
+                    actions={[
+                      <EditOutlined key="edit" onClick={() => handleEditNote(note)} />,
+                      <DeleteOutlined key="delete" onClick={() => handleDeleteNote(note.id)} />
+                    ]}
+                  >
+                    <Card.Meta
+                      title={note.title}
+                      description={
+                        <Typography.Paragraph ellipsis={{ rows: 2 }}>
+                          {note.content}
+                        </Typography.Paragraph>
+                      }
+                    />
+                    <div style={{ marginTop: '12px', fontSize: '12px', color: '#999' }}>
+                      计划发布时间: {dayjs(note.scheduledTime || selectedPlan.startDate).format('YYYY-MM-DD HH:mm')}
+                    </div>
+                    {note.platforms && (
+                      <div style={{ marginTop: '8px' }}>
+                        {note.platforms.xiaohongshu && <Tag color="red">小红书</Tag>}
+                        {note.platforms.wechat && <Tag color="green">微信</Tag>}
+                      </div>
+                    )}
+                  </Card>
+                ))}
+              </div>
             </>
           )}
         </div>
@@ -1488,7 +1456,7 @@ const PublishPlan: React.FC = () => {
                         AI自动生产内容
                       </div>
                       <div style={{ color: '#666', fontSize: '14px' }}>
-                        开启后，AI将根据您的设置自动循环生成内容，无需手动干预
+                        开启后，AI将定期根据你的设置自动生成内容，并将生成的内容提交人工审核。审核后的内容将自动发布。
                       </div>
                     </div>
                   </div>
