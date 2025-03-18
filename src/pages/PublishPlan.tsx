@@ -358,7 +358,6 @@ const PublishPlan: React.FC = () => {
   const [showBadge, setShowBadge] = useState(true);
   const [calendarVisible, setCalendarVisible] = useState(false);
   const [autoGenerateContent, setAutoGenerateContent] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
 
   // 获取当前账号信息
   const currentAccount = mockAccounts.find(acc => acc.id === id);
@@ -706,7 +705,6 @@ const PublishPlan: React.FC = () => {
   // 添加handleEditNote函数
   const handleEditNote = (note: Note) => {
     setEditingNote(note);
-    setIsEditing(true);
   };
 
   const renderTaskView = () => {
