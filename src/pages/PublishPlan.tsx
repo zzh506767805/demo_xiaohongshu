@@ -775,7 +775,7 @@ const PublishPlan: React.FC = () => {
               <div style={{ 
                 display: 'flex', 
                 justifyContent: 'flex-end', 
-                marginBottom: '0px',
+                marginBottom: '24px',
                 padding: '0px 16px'
               }}>
                 <Button type="primary" onClick={handleConfirmPlan}>确认计划</Button>
@@ -784,35 +784,36 @@ const PublishPlan: React.FC = () => {
               {/* 笔记列表 */}
               <div style={{ 
                 display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
+                gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', 
                 gap: '16px' 
               }}>
                 {selectedPlan.notes.map(note => (
                   <Card 
                     key={note.id}
                     hoverable
-                    style={{ height: '100%' }}
-                    cover={note.imageUrl ? <img alt={note.title} src={note.imageUrl} /> : null}
+                    style={{ height: '100%', fontSize: '0.9em' }}
+                    cover={note.imageUrl ? <img alt={note.title} src={note.imageUrl} style={{ height: '140px', objectFit: 'cover' }} /> : null}
                     actions={[
                       <EditOutlined key="edit" onClick={() => handleEditNote(note)} />,
                       <DeleteOutlined key="delete" onClick={() => handleDeleteNote(note.id)} />
                     ]}
+                    size="small"
                   >
                     <Card.Meta
-                      title={note.title}
+                      title={<div style={{ fontSize: '0.95em' }}>{note.title}</div>}
                       description={
-                        <Typography.Paragraph ellipsis={{ rows: 2 }}>
+                        <Typography.Paragraph ellipsis={{ rows: 2 }} style={{ fontSize: '0.85em' }}>
                           {note.content}
                         </Typography.Paragraph>
                       }
                     />
-                    <div style={{ marginTop: '12px', fontSize: '12px', color: '#999' }}>
+                    <div style={{ marginTop: '8px', fontSize: '11px', color: '#999' }}>
                       计划发布时间: {dayjs(note.scheduledTime || selectedPlan.startDate).format('YYYY-MM-DD HH:mm')}
                     </div>
                     {note.platforms && (
-                      <div style={{ marginTop: '8px' }}>
-                        {note.platforms.xiaohongshu && <Tag color="red">小红书</Tag>}
-                        {note.platforms.wechat && <Tag color="green">微信</Tag>}
+                      <div style={{ marginTop: '6px' }}>
+                        {note.platforms.xiaohongshu && <Tag color="red" style={{ fontSize: '10px', padding: '0 4px' }}>小红书</Tag>}
+                        {note.platforms.wechat && <Tag color="green" style={{ fontSize: '10px', padding: '0 4px' }}>微信</Tag>}
                       </div>
                     )}
                   </Card>
