@@ -1395,7 +1395,7 @@ const PublishPlan: React.FC = () => {
           },
           {
             key: 'settings',
-            label: '个性化设置',
+            label: '个性化',
             children: (
               <div>
                 <Card title="品牌之声设置" style={{ marginBottom: '24px' }}>
