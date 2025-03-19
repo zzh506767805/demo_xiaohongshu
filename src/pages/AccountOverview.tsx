@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Card, Row, Col, Button, Modal, Form, Input, Select, Avatar, Statistic, Tooltip, Timeline, Tag } from 'antd';
-import { PlusOutlined, UserOutlined, RiseOutlined, QuestionCircleOutlined, SearchOutlined, EditOutlined, SendOutlined, BarChartOutlined } from '@ant-design/icons';
+import { Card, Row, Col, Button, Modal, Form, Input, Select, Avatar, Statistic, Tooltip, Timeline, Tag, Calendar, Space } from 'antd';
+import { PlusOutlined, UserOutlined, RiseOutlined, QuestionCircleOutlined, SearchOutlined, EditOutlined, SendOutlined, BarChartOutlined, CalendarOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import dayjs, { Dayjs } from 'dayjs';
 
 interface XHSAccount {
   id: string;
@@ -133,6 +134,7 @@ const AccountOverview: React.FC = () => {
   const [form] = Form.useForm();
   const [visibleWorkLog, setVisibleWorkLog] = useState<WorkLog | null>(null);
   const [activeAccountFilter] = useState<string | null>(null);
+  const [calendarVisible, setCalendarVisible] = useState(false);
 
   const filteredWorkLogs = activeAccountFilter 
     ? mockWorkLogs.filter(log => log.accountId === activeAccountFilter) 
@@ -152,6 +154,34 @@ const AccountOverview: React.FC = () => {
     } catch (errorInfo) {
       console.log('Failed:', errorInfo);
     }
+  };
+
+  // 日历单元格渲染函数
+  const dateCellRender = (date: Dayjs) => {
+    // 简单日历渲染逻辑，可以根据需要扩展
+    const dayStr = date.format('YYYY-MM-DD');
+    
+    // 模拟一些日期有内容
+    const hasContent = dayStr === '2024-03-22' || dayStr === '2024-03-25' || dayStr === '2024-03-28';
+    
+    return hasContent ? (
+      <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+        <li
+          style={{
+            backgroundColor: '#e6f7ff',
+            borderRadius: '3px',
+            padding: '2px 4px',
+            marginBottom: '2px',
+            fontSize: '12px',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+          }}
+        >
+          {dayStr === '2024-03-22' ? '春季新品分享' : dayStr === '2024-03-25' ? '护肤品测评' : '探店日记'}
+        </li>
+      </ul>
+    ) : null;
   };
 
   return (
@@ -207,9 +237,14 @@ const AccountOverview: React.FC = () => {
 
       <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h2 style={{ margin: 0, fontSize: '18px' }}>已托管账号</h2>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddAccountVisible(true)}>
-          添加账号
-        </Button>
+        <Space>
+          <Button icon={<CalendarOutlined />} onClick={() => setCalendarVisible(true)}>
+            查看日历
+          </Button>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddAccountVisible(true)}>
+            添加账号
+          </Button>
+        </Space>
       </div>
 
       <Row gutter={[24, 24]}>
@@ -405,6 +440,21 @@ const AccountOverview: React.FC = () => {
             <Input placeholder="请输入头像图片链接" />
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* 添加日历弹窗 */}
+      <Modal
+        title="内容发布日历"
+        open={calendarVisible}
+        onCancel={() => setCalendarVisible(false)}
+        width={800}
+        footer={null}
+      >
+        <Calendar
+          mode="month"
+          defaultValue={dayjs()}
+          dateCellRender={dateCellRender}
+        />
       </Modal>
     </div>
   );

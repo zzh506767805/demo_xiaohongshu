@@ -358,6 +358,7 @@ const PublishPlan: React.FC = () => {
   const [showBadge, setShowBadge] = useState(true);
   const [calendarVisible, setCalendarVisible] = useState(false);
   const [autoGenerateContent, setAutoGenerateContent] = useState(false);
+  const [showAllReviewContent, setShowAllReviewContent] = useState(false);
 
   // 获取当前账号信息
   const currentAccount = mockAccounts.find(acc => acc.id === id);
@@ -1122,14 +1123,19 @@ const PublishPlan: React.FC = () => {
                   title={
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: '16px' }}>待审核内容</span>
-                      <span style={{ color: '#1890ff', fontWeight: 'normal', fontSize: '14px' }}>您有 <b>3</b> 篇内容待审核</span>
+                      <span 
+                        style={{ color: '#1890ff', fontWeight: 'normal', fontSize: '14px', cursor: 'pointer' }}
+                        onClick={() => setShowAllReviewContent(!showAllReviewContent)}
+                      >
+                        {showAllReviewContent ? '收起' : '展开全部'} | 您有 <b>3</b> 篇内容待审核
+                      </span>
                     </div>
                   } 
                   style={{ marginBottom: '24px' }}
                 >
                   <List
                     itemLayout="horizontal"
-                    dataSource={[
+                    dataSource={showAllReviewContent ? [
                       {
                         id: 'review1',
                         title: '春季新款分享：这件连衣裙也太显瘦了',
@@ -1148,17 +1154,26 @@ const PublishPlan: React.FC = () => {
                         scheduledTime: '2024-03-24 19:00:00',
                         imageUrl: 'https://picsum.photos/400/400?random=103'
                       }
+                    ] : [
+                      {
+                        id: 'review1',
+                        title: '春季新款分享：这件连衣裙也太显瘦了',
+                        scheduledTime: '2024-03-22 10:00:00',
+                        imageUrl: 'https://picsum.photos/400/400?random=101'
+                      }
                     ]}
                     renderItem={(item) => (
                       <List.Item
                         actions={[
                           <Button type="primary" size="small" key="review">审核</Button>
                         ]}
+                        style={{ padding: '8px 0' }}
                       >
                         <List.Item.Meta
-                          avatar={<Avatar shape="square" size={64} src={item.imageUrl} />}
-                          title={item.title}
-                          description={`计划发布时间：${item.scheduledTime}`}
+                          avatar={<Avatar shape="square" size={48} src={item.imageUrl} />}
+                          title={<div style={{ fontSize: '14px' }}>{item.title}</div>}
+                          description={<div style={{ fontSize: '12px' }}>{`计划发布时间：${item.scheduledTime}`}</div>}
+                          style={{ margin: '0' }}
                         />
                       </List.Item>
                     )}
@@ -1215,7 +1230,17 @@ const PublishPlan: React.FC = () => {
                   </Col>
                 </Row>
 
-                <Card title="最近发布内容数据" style={{ marginTop: '24px' }}>
+                <Card 
+                  title={
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>最近发布内容数据</span>
+                      <Button type="link" size="small" style={{ padding: '0', fontSize: '14px' }}>
+                        查看全部
+                      </Button>
+                    </div>
+                  } 
+                  style={{ marginTop: '24px' }}
+                >
                   <Table
                     dataSource={mockContentData}
                     columns={[
@@ -1263,10 +1288,26 @@ const PublishPlan: React.FC = () => {
                         )
                       }
                     ]}
+                    pagination={false}
                   />
                 </Card>
 
-                <Card title="下周发布计划" style={{ marginTop: '24px' }}>
+                <Card 
+                  title={
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>下周发布计划</span>
+                      <Button 
+                        type="link" 
+                        size="small" 
+                        style={{ padding: '0', fontSize: '14px' }}
+                        onClick={() => setCalendarVisible(true)}
+                      >
+                        查看全部
+                      </Button>
+                    </div>
+                  } 
+                  style={{ marginTop: '24px' }}
+                >
                   <div className="calendar-week-view" style={{ display: 'flex', justifyContent: 'space-between' }}>
                     {Array.from({ length: 7 }).map((_, index) => {
                       const date = dayjs().add(index, 'day');
