@@ -1115,7 +1115,7 @@ const PublishPlan: React.FC = () => {
         items={[
           {
             key: 'overview',
-            label: '数据概览',
+            label: '概览',
             children: (
               <div>
                 <Card 
