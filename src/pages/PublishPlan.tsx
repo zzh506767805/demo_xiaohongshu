@@ -1508,7 +1508,7 @@ const PublishPlan: React.FC = () => {
                     />
                     <div>
                       <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '4px' }}>
-                        AI自动生产内容
+                        内容全托管
                       </div>
                       <div style={{ color: '#666', fontSize: '14px' }}>
                         开启后，AI将定期根据你的设置自动生成内容，并将生成的内容提交人工审核。审核后的内容将自动发布。
