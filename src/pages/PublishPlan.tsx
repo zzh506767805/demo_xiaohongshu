@@ -359,6 +359,12 @@ const PublishPlan: React.FC = () => {
   const [calendarVisible, setCalendarVisible] = useState(false);
   const [autoGenerateContent, setAutoGenerateContent] = useState(false);
   const [showAllReviewContent, setShowAllReviewContent] = useState(false);
+  
+  // 选题偏好状态
+  const [enableHotTopics, setEnableHotTopics] = useState(true);
+  const [enableNewProducts, setEnableNewProducts] = useState(true);
+  const [enableNewActivities, setEnableNewActivities] = useState(false);
+  const [hotTopicRelevance, setHotTopicRelevance] = useState<number>(70);
 
   // 获取当前账号信息
   const currentAccount = mockAccounts.find(acc => acc.id === id);
@@ -1490,7 +1496,14 @@ const PublishPlan: React.FC = () => {
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
                     <Switch 
                       checked={autoGenerateContent} 
-                      onChange={setAutoGenerateContent} 
+                      onChange={(checked) => {
+                        setAutoGenerateContent(checked);
+                        if (checked) {
+                          message.success('已开启AI自动生产内容');
+                        } else {
+                          message.info('已关闭AI自动生产内容');
+                        }
+                      }} 
                       style={{ marginRight: '16px' }}
                     />
                     <div>
@@ -1506,6 +1519,92 @@ const PublishPlan: React.FC = () => {
 
                 {autoGenerateContent && (
                   <>
+                    <Card title="AI选题偏好设置" style={{ marginBottom: '24px' }}>
+                      <div style={{ color: '#666', fontSize: '14px', marginBottom: '16px' }}>
+                        开启后，AI将根据您的配置自动进行选题，确保内容与您的运营策略一致
+                      </div>
+                      
+                      <Row gutter={[0, 16]}>
+                        <Col span={24}>
+                          <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                            <Checkbox 
+                              checked={enableHotTopics}
+                              onChange={(e) => {
+                                setEnableHotTopics(e.target.checked);
+                                message.success('已更新热点选题设置');
+                              }}
+                              style={{ marginRight: '12px', marginTop: '4px' }}
+                            />
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>热点选题</div>
+                              <div style={{ color: '#666', fontSize: '14px', marginBottom: '8px' }}>
+                                AI将自动监测热点话题，根据相关度为您推荐选题
+                              </div>
+                              {enableHotTopics && (
+                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                  <span style={{ marginRight: '8px' }}>热点相关度阈值：</span>
+                                  <Tooltip title="只有当热点与账号定位的相关度达到设定阈值时，才会被选为选题">
+                                    <Select 
+                                      value={hotTopicRelevance} 
+                                      onChange={(value: number) => {
+                                        setHotTopicRelevance(value);
+                                        message.success('已更新热点相关度阈值');
+                                      }}
+                                      style={{ width: 120 }}
+                                    >
+                                      <Select.Option value={50}>50%</Select.Option>
+                                      <Select.Option value={60}>60%</Select.Option>
+                                      <Select.Option value={70}>70%</Select.Option>
+                                      <Select.Option value={80}>80%</Select.Option>
+                                      <Select.Option value={90}>90%</Select.Option>
+                                    </Select>
+                                  </Tooltip>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </Col>
+
+                        <Col span={24}>
+                          <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                            <Checkbox 
+                              checked={enableNewProducts}
+                              onChange={(e) => {
+                                setEnableNewProducts(e.target.checked);
+                                message.success('已更新商品上新选题设置');
+                              }}
+                              style={{ marginRight: '12px', marginTop: '4px' }}
+                            />
+                            <div>
+                              <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>商品上新选题</div>
+                              <div style={{ color: '#666', fontSize: '14px' }}>
+                                当您添加新商品时，AI将自动为您创建相关选题，帮助推广新品
+                              </div>
+                            </div>
+                          </div>
+                        </Col>
+
+                        <Col span={24}>
+                          <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                            <Checkbox 
+                              checked={enableNewActivities}
+                              onChange={(e) => {
+                                setEnableNewActivities(e.target.checked);
+                                message.success('已更新活动上新选题设置');
+                              }}
+                              style={{ marginRight: '12px', marginTop: '4px' }}
+                            />
+                            <div>
+                              <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>活动上新选题</div>
+                              <div style={{ color: '#666', fontSize: '14px' }}>
+                                当您有新的营销活动时，AI将自动为您创建相关选题，配合活动节奏
+                              </div>
+                            </div>
+                          </div>
+                        </Col>
+                      </Row>
+                    </Card>
+
                     <Card title="发布策略设置" style={{ marginBottom: '24px' }}>
                       <Form layout="vertical">
                         <h3 style={{ marginBottom: '16px', fontWeight: 'bold' }}>AI自动创作配置</h3>
