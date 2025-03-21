@@ -405,6 +405,7 @@ const PublishPlan: React.FC = () => {
   const [showSkillConfig, setShowSkillConfig] = useState(false);
 
   const [imageSelectMode, setImageSelectMode] = useState<'auto' | 'manual'>('auto');
+  const [mountType, setMountType] = useState<'none' | 'product' | 'poi'>('none');
 
   // 获取当前账号信息
   const currentAccount = mockAccounts.find(acc => acc.id === id);
@@ -1043,7 +1044,7 @@ const PublishPlan: React.FC = () => {
                   {currentSkill.id === 'daily' && (
                     <div style={{ marginBottom: '24px', width: '100%' }}>
                       <p>AI会根据您的素材库和商品信息，定期创作高质量的日常内容。</p>
-                      <br></br>
+                      <p>通过智能调度算法，确保内容发布的连续性和稳定性。</p>
 
                       <Card style={{ marginBottom: '16px' }} title="创作频率">
                         <div style={{ padding: '0' }}>
@@ -1077,8 +1078,12 @@ const PublishPlan: React.FC = () => {
                               </Select>
                             </div>
                           </div>
-                          
-                          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                        </div>
+                      </Card>
+
+                      <Card style={{ marginBottom: '16px' }} title="内容审批">
+                        <div style={{ padding: '0' }}>
+                          <div style={{ marginBottom: '16px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                             <div style={{ flex: '1', minWidth: '200px' }}>
                               <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>AI提前几天通知我审批内容</div>
                               <Select
@@ -1107,6 +1112,102 @@ const PublishPlan: React.FC = () => {
                               </Select>
                             </div>
                           </div>
+
+                          <div style={{ marginBottom: '16px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                            <div style={{ flex: '1', minWidth: '200px' }}>
+                              <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>审批人</div>
+                              <Select
+                                mode="multiple"
+                                placeholder="请选择审批人"
+                                defaultValue={['user1']}
+                                style={{ width: '100%' }}
+                              >
+                                <Select.Option value="user1">张三（主管）</Select.Option>
+                                <Select.Option value="user2">李四（经理）</Select.Option>
+                                <Select.Option value="user3">王五（总监）</Select.Option>
+                              </Select>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+
+                      <Card style={{ marginBottom: '16px' }} title="挂载配置">
+                        <div style={{ padding: '0' }}>
+                          <div style={{ marginBottom: '16px' }}>
+                            <Radio.Group 
+                              defaultValue="none"
+                              onChange={(e) => setMountType(e.target.value)}
+                            >
+                              <Space direction="vertical">
+                                <Radio value="none">不挂载商品或POI</Radio>
+                                <Radio value="product">挂载商品</Radio>
+                                <Radio value="poi">挂载POI</Radio>
+                              </Space>
+                            </Radio.Group>
+                          </div>
+
+                          {mountType === 'product' && (
+                            <div className="setting-section">
+                              <Table
+                                dataSource={[
+                                  {
+                                    id: '1',
+                                    name: '设计感泡泡袖连衣裙',
+                                    category: '服装',
+                                    price: '¥299'
+                                  },
+                                  {
+                                    id: '2',
+                                    name: '多效修护眼霜',
+                                    category: '护肤',
+                                    price: '¥219'
+                                  },
+                                  {
+                                    id: '3',
+                                    name: '法式复古小方包',
+                                    category: '配饰',
+                                    price: '¥399'
+                                  },
+                                ]}
+                                columns={[
+                                  {
+                                    title: '商品名称',
+                                    dataIndex: 'name',
+                                    key: 'name',
+                                  },
+                                  {
+                                    title: '分类',
+                                    dataIndex: 'category',
+                                    key: 'category',
+                                  },
+                                  {
+                                    title: '价格',
+                                    dataIndex: 'price',
+                                    key: 'price',
+                                  },
+                                  {
+                                    title: '操作',
+                                    key: 'action',
+                                    render: (_) => (
+                                      <Button type="link" danger size="small">
+                                        删除
+                                      </Button>
+                                    ),
+                                  },
+                                ]}
+                                size="small"
+                                pagination={false}
+                              />
+                              <Button 
+                                type="dashed" 
+                                block 
+                                icon={<PlusOutlined />} 
+                                style={{ marginTop: '16px' }}
+                              >
+                                添加主推商品
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       </Card>
 
@@ -1262,71 +1363,6 @@ const PublishPlan: React.FC = () => {
                                 </div>
                               </>
                             )}
-                          </div>
-                        </div>
-                      </Card>
-
-                      <Card style={{ marginBottom: '16px' }} title="主推商品">
-                        <div style={{ padding: '0' }}>
-                          <div className="setting-section">
-                            <Table
-                              dataSource={[
-                                {
-                                  id: '1',
-                                  name: '设计感泡泡袖连衣裙',
-                                  category: '服装',
-                                  price: '¥299'
-                                },
-                                {
-                                  id: '2',
-                                  name: '多效修护眼霜',
-                                  category: '护肤',
-                                  price: '¥219'
-                                },
-                                {
-                                  id: '3',
-                                  name: '法式复古小方包',
-                                  category: '配饰',
-                                  price: '¥399'
-                                },
-                              ]}
-                              columns={[
-                                {
-                                  title: '商品名称',
-                                  dataIndex: 'name',
-                                  key: 'name',
-                                },
-                                {
-                                  title: '分类',
-                                  dataIndex: 'category',
-                                  key: 'category',
-                                },
-                                {
-                                  title: '价格',
-                                  dataIndex: 'price',
-                                  key: 'price',
-                                },
-                                {
-                                  title: '操作',
-                                  key: 'action',
-                                  render: (_) => (
-                                    <Button type="link" danger size="small">
-                                      删除
-                                    </Button>
-                                  ),
-                                },
-                              ]}
-                              size="small"
-                              pagination={false}
-                            />
-                            <Button 
-                              type="dashed" 
-                              block 
-                              icon={<PlusOutlined />} 
-                              style={{ marginTop: '16px' }}
-                            >
-                              添加主推商品
-                            </Button>
                           </div>
                         </div>
                       </Card>
@@ -1551,8 +1587,7 @@ const PublishPlan: React.FC = () => {
                 {currentSkill.id === 'daily' && (
                   <div style={{ marginBottom: '24px', width: '100%' }}>
                     <p>AI会根据您的素材库和商品信息，定期创作高质量的日常内容。</p>
-                    <p></p>
-
+                    <br></br>
                     <Card style={{ marginBottom: '16px' }} title="创作频率">
                       <div style={{ padding: '0' }}>
                         <div style={{ marginBottom: '16px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
@@ -1585,8 +1620,12 @@ const PublishPlan: React.FC = () => {
                             </Select>
                           </div>
                         </div>
-                        
-                        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                      </div>
+                    </Card>
+
+                    <Card style={{ marginBottom: '16px' }} title="内容审批">
+                      <div style={{ padding: '0' }}>
+                        <div style={{ marginBottom: '16px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                           <div style={{ flex: '1', minWidth: '200px' }}>
                             <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>AI提前几天通知我审批内容</div>
                             <Select
@@ -1615,15 +1654,259 @@ const PublishPlan: React.FC = () => {
                             </Select>
                           </div>
                         </div>
+
+                        <div style={{ marginBottom: '16px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                          <div style={{ flex: '1', minWidth: '200px' }}>
+                            <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>审批人</div>
+                            <Select
+                              mode="multiple"
+                              placeholder="请选择审批人"
+                              defaultValue={['user1']}
+                              style={{ width: '100%' }}
+                            >
+                              <Select.Option value="user1">张三（主管）</Select.Option>
+                              <Select.Option value="user2">李四（经理）</Select.Option>
+                              <Select.Option value="user3">王五（总监）</Select.Option>
+                            </Select>
+                          </div>
+                        </div>
                       </div>
                     </Card>
-                    <Card style={{ marginBottom: '16px' }} title="图片源选择">
-                      {/* 保持原有的图片源选择配置内容 */}
-                      // ... existing code ...
+
+                    <Card style={{ marginBottom: '16px' }} title="挂载配置">
+                      <div style={{ padding: '0' }}>
+                        <div style={{ marginBottom: '16px' }}>
+                          <Radio.Group 
+                            defaultValue="none"
+                            onChange={(e) => setMountType(e.target.value)}
+                          >
+                            <Space direction="vertical">
+                              <Radio value="none">不挂载商品或POI</Radio>
+                              <Radio value="product">挂载商品</Radio>
+                              <Radio value="poi">挂载POI</Radio>
+                            </Space>
+                          </Radio.Group>
+                        </div>
+
+                        {mountType === 'product' && (
+                          <div className="setting-section">
+                            <Table
+                              dataSource={[
+                                {
+                                  id: '1',
+                                  name: '设计感泡泡袖连衣裙',
+                                  category: '服装',
+                                  price: '¥299'
+                                },
+                                {
+                                  id: '2',
+                                  name: '多效修护眼霜',
+                                  category: '护肤',
+                                  price: '¥219'
+                                },
+                                {
+                                  id: '3',
+                                  name: '法式复古小方包',
+                                  category: '配饰',
+                                  price: '¥399'
+                                },
+                              ]}
+                              columns={[
+                                {
+                                  title: '商品名称',
+                                  dataIndex: 'name',
+                                  key: 'name',
+                                },
+                                {
+                                  title: '分类',
+                                  dataIndex: 'category',
+                                  key: 'category',
+                                },
+                                {
+                                  title: '价格',
+                                  dataIndex: 'price',
+                                  key: 'price',
+                                },
+                                {
+                                  title: '操作',
+                                  key: 'action',
+                                  render: (_) => (
+                                    <Button type="link" danger size="small">
+                                      删除
+                                    </Button>
+                                  ),
+                                },
+                              ]}
+                              size="small"
+                              pagination={false}
+                            />
+                            <Button 
+                              type="dashed" 
+                              block 
+                              icon={<PlusOutlined />} 
+                              style={{ marginTop: '16px' }}
+                            >
+                              添加主推商品
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                     </Card>
-                    <Card style={{ marginBottom: '16px' }} title="主推商品">
-                      {/* 保持原有的主推商品配置内容 */}
-                      // ... existing code ...
+
+                    <Card style={{ marginBottom: '16px' }} title="图片源选择">
+                      <div style={{ padding: '0' }}>
+                        <div style={{ marginBottom: '16px' }}>
+                          <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>选图模式</div>
+                          <Radio.Group 
+                            defaultValue="auto" 
+                            style={{ marginBottom: '16px' }}
+                            onChange={(e) => setImageSelectMode(e.target.value)}
+                          >
+                            <Radio value="auto">自动选图</Radio>
+                            <Radio value="manual">手动选图</Radio>
+                          </Radio.Group>
+
+                          {imageSelectMode === 'auto' ? (
+                            <>
+                              <div style={{ marginBottom: '8px', fontSize: '14px', color: '#666' }}>
+                                AI将在所选素材库分类中，自动为每篇内容匹配最合适的图片
+                              </div>
+                              <Checkbox.Group 
+                                style={{ width: '100%' }} 
+                                defaultValue={['product', 'fashion']}
+                              >
+                                <Row>
+                                  <Col span={8}><Checkbox value="product">商品图片</Checkbox></Col>
+                                  <Col span={8}><Checkbox value="fashion">时尚生活</Checkbox></Col>
+                                  <Col span={8}><Checkbox value="people">人物图片</Checkbox></Col>
+                                  <Col span={8}><Checkbox value="food">美食图片</Checkbox></Col>
+                                  <Col span={8}><Checkbox value="scene">场景图片</Checkbox></Col>
+                                  <Col span={8}><Checkbox value="travel">旅行图片</Checkbox></Col>
+                                </Row>
+                              </Checkbox.Group>
+                            </>
+                          ) : (
+                            <>
+                              <div style={{ marginBottom: '8px', fontSize: '14px', color: '#666' }}>
+                                AI将在您指定的图片中，自动为每篇内容选择最合适的图片
+                              </div>
+                              <div style={{ 
+                                border: '1px dashed #d9d9d9',
+                                borderRadius: '8px',
+                                padding: '16px',
+                                backgroundColor: '#fafafa'
+                              }}>
+                                <div style={{ 
+                                  display: 'grid',
+                                  gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
+                                  gap: '8px',
+                                  marginBottom: '16px'
+                                }}>
+                                  {selectedImages.map((image, index) => (
+                                    <div 
+                                      key={index}
+                                      style={{ 
+                                        position: 'relative',
+                                        aspectRatio: '1',
+                                        borderRadius: '4px',
+                                        overflow: 'hidden'
+                                      }}
+                                    >
+                                      <img 
+                                        src={image} 
+                                        style={{
+                                          width: '100%',
+                                          height: '100%',
+                                          objectFit: 'cover'
+                                        }}
+                                        alt={`已选图片 ${index + 1}`}
+                                      />
+                                      <Button
+                                        type="text"
+                                        icon={<DeleteOutlined />}
+                                        style={{
+                                          position: 'absolute',
+                                          top: '4px',
+                                          right: '4px',
+                                          background: 'rgba(255,255,255,0.8)',
+                                          padding: '4px',
+                                          minWidth: 'unset',
+                                          height: 'unset'
+                                        }}
+                                        onClick={() => {
+                                          const newImages = [...selectedImages];
+                                          newImages.splice(index, 1);
+                                          setSelectedImages(newImages);
+                                        }}
+                                      />
+                                    </div>
+                                  ))}
+                                  <Button 
+                                    type="dashed"
+                                    style={{ 
+                                      height: '100%',
+                                      aspectRatio: '1',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center'
+                                    }}
+                                    onClick={() => {
+                                      Modal.info({
+                                        title: '选择图片',
+                                        width: 800,
+                                        content: (
+                                          <div style={{ 
+                                            display: 'grid', 
+                                            gridTemplateColumns: 'repeat(4, 1fr)', 
+                                            gap: 12,
+                                            padding: '12px 0'
+                                          }}>
+                                            {Array(12).fill(null).map((_, index) => (
+                                              <div
+                                                key={index}
+                                                style={{
+                                                  border: '1px solid #f0f0f0',
+                                                  borderRadius: 8,
+                                                  padding: 4,
+                                                  cursor: 'pointer',
+                                                  transition: 'all 0.3s'
+                                                }}
+                                                onClick={() => {
+                                                  const imageUrl = `https://picsum.photos/400/400?random=${index}`;
+                                                  if (!selectedImages.includes(imageUrl)) {
+                                                    setSelectedImages([...selectedImages, imageUrl]);
+                                                  }
+                                                }}
+                                              >
+                                                <img
+                                                  src={`https://picsum.photos/400/400?random=${index}`}
+                                                  alt={`素材 ${index + 1}`}
+                                                  style={{ 
+                                                    width: '100%', 
+                                                    height: 150, 
+                                                    objectFit: 'cover',
+                                                    borderRadius: 4
+                                                  }}
+                                                />
+                                              </div>
+                                            ))}
+                                          </div>
+                                        ),
+                                        onOk() {}
+                                      });
+                                    }}
+                                  >
+                                    <PlusOutlined />
+                                  </Button>
+                                </div>
+                                <div style={{ fontSize: '12px', color: '#999', textAlign: 'center' }}>
+                                  已选择 {selectedImages.length} 张图片
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     </Card>
                   </div>
                 )}
