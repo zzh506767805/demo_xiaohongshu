@@ -1044,7 +1044,7 @@ const PublishPlan: React.FC = () => {
                   {currentSkill.id === 'daily' && (
                     <div style={{ marginBottom: '24px', width: '100%' }}>
                       <p>AI会根据您的素材库和商品信息，定期创作高质量的日常内容。</p>
-                      <p>通过智能调度算法，确保内容发布的连续性和稳定性。</p>
+                      <br></br>
 
                       <Card style={{ marginBottom: '16px' }} title="创作频率">
                         <div style={{ padding: '0' }}>
