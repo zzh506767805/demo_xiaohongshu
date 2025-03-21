@@ -59,7 +59,7 @@ const App: React.FC = () => {
           alignItems: 'center', 
           justifyContent: 'center' 
         }}>
-          <span style={{ color: '#fff', fontSize: '16px', fontWeight: 'bold' }}>XHS Writer</span>
+          <span style={{ color: '#fff', fontSize: '16px', fontWeight: 'bold' }}>Youzan</span>
         </div>
         <Menu
           theme="dark"
@@ -69,19 +69,19 @@ const App: React.FC = () => {
             {
               key: '1',
               icon: <UserOutlined />,
-              label: '内容托管',
+              label: '侧边栏',
               onClick: () => navigate('/accounts')
             },
             {
               key: '2',
               icon: <TeamOutlined />,
-              label: '朋友圈托管',
+              label: '占位',
               onClick: () => navigate('/moment-manager')
             },
             {
               key: '3',
               icon: <FileOutlined />,
-              label: '内容管理',
+              label: '占位',
               onClick: () => navigate('/content-manager')
             }
           ]}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Drawer, Form, DatePicker, Space, List, Card, Modal, message, Input, Radio, Tooltip, Calendar, Tabs, Avatar, Select, Timeline, Table, Badge, Row, Col, Statistic, Checkbox, Switch, Typography, Tag, Slider } from 'antd';
-import { PlusOutlined, DeleteOutlined, QuestionCircleOutlined, LoadingOutlined, CalendarOutlined, RobotOutlined, LeftOutlined, RightOutlined, ShareAltOutlined, HeartOutlined, MessageOutlined, StarOutlined, EllipsisOutlined, RiseOutlined, AppstoreOutlined, UnorderedListOutlined, TableOutlined, EditOutlined } from '@ant-design/icons';
+import { Button, Drawer, Form, DatePicker, Space, List, Card, Modal, message, Input, Radio, Tooltip, Calendar, Tabs, Avatar, Select, Table, Badge, Row, Col, Statistic, Checkbox, Switch, Typography, Tag, Slider } from 'antd';
+import type { RadioChangeEvent } from 'antd';
+import { PlusOutlined, DeleteOutlined, QuestionCircleOutlined, LoadingOutlined, CalendarOutlined, RobotOutlined, LeftOutlined, RightOutlined, ShareAltOutlined, HeartOutlined, MessageOutlined, StarOutlined, EllipsisOutlined, RiseOutlined, AppstoreOutlined, EditOutlined, ShoppingOutlined, SettingOutlined } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -84,7 +85,10 @@ interface ContentData {
   products: ProductData[];
 }
 
-
+interface PublishStrategy {
+  mode: 'additional' | 'replace';
+  priorities: string[];
+}
 
 const mockAccounts: XHSAccount[] = [
   {
@@ -343,7 +347,7 @@ const PublishPlan: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
-  const [viewMode, setViewMode] = useState<'task' | 'timeline' | 'list'>('task');
+  const [] = useState<'task' | 'timeline' | 'list'>('task');
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [singleNoteDrawerVisible, setSingleNoteDrawerVisible] = useState(false);
   const [plans, setPlans] = useState<Plan[]>(mockPlans);  // 使用 mock 数据初始化
@@ -361,14 +365,11 @@ const PublishPlan: React.FC = () => {
   const [showAllReviewContent, setShowAllReviewContent] = useState(false);
   
   // 选题偏好状态
-  const [enableHotTopics, setEnableHotTopics] = useState(true);
+  const [enableHotTopics, setEnableHotTopics] = useState(true); 
   const [enableNewProducts, setEnableNewProducts] = useState(true);
   const [enableNewActivities, setEnableNewActivities] = useState(false);
-  const [hotTopicRelevance, setHotTopicRelevance] = useState<number>(70);
-
-  // 动态选题设置
   const [dynamicTopicStrategy, setDynamicTopicStrategy] = useState<'additional' | 'replace'>('additional');
-
+  
   // 静态选题设置
   const [enableRegularPromotion, setEnableRegularPromotion] = useState(true);
   const [enableProductPromotion, setEnableProductPromotion] = useState(true);
@@ -376,6 +377,34 @@ const PublishPlan: React.FC = () => {
     regularPromotion: 60,
     productPromotion: 40,
   });
+  
+  // 创作技能相关状态
+  const [selectedSkill, setSelectedSkill] = useState<string | null>('daily');
+  const [enableDailyCreation, setEnableDailyCreation] = useState(false);
+  const [enableHotTopicCreation, setEnableHotTopicCreation] = useState(false);
+  const [enableNewProductCreation, setEnableNewProductCreation] = useState(false);
+  const [enableAssistCreation, setEnableAssistCreation] = useState(true); // 默认开启辅助创作
+  
+  // 热点相关度配置
+  const [hotTopicRelevance, setHotTopicRelevance] = useState<number>(70);
+  const [hotTopicStrategy, setHotTopicStrategy] = useState<PublishStrategy>({
+    mode: 'additional',
+    priorities: ['热点创作', '商品上新', '日常内容']
+  });
+  
+  const [newProductStrategy, setNewProductStrategy] = useState<PublishStrategy>({
+    mode: 'additional',
+    priorities: ['商品上新', '热点创作', '日常内容']
+  });
+  
+  // 审批提前通知时间
+  const [notifyDaysBeforePublish, setNotifyDaysBeforePublish] = useState<number>(3);
+  const [publishQuantity, setPublishQuantity] = useState<string>('daily');
+  const [] = useState<string[]>(['10:00', '20:00']);
+
+  const [showSkillConfig, setShowSkillConfig] = useState(false);
+
+  const [imageSelectMode, setImageSelectMode] = useState<'auto' | 'manual'>('auto');
 
   // 获取当前账号信息
   const currentAccount = mockAccounts.find(acc => acc.id === id);
@@ -398,9 +427,6 @@ const PublishPlan: React.FC = () => {
     }
   }, []);
 
-  const showDrawer = () => {
-    setDrawerVisible(true);
-  };
 
   const onClose = () => {
     setDrawerVisible(false);
@@ -485,10 +511,6 @@ const PublishPlan: React.FC = () => {
     }
   };
 
-  const handleEdit = (note: Note, index: number) => {
-    setEditingNote(note);
-    setCurrentNoteIndex(index);
-  };
   
   const handlePrevNote = () => {
     if (currentNoteIndex > 0 && selectedPlan) {
@@ -568,18 +590,6 @@ const PublishPlan: React.FC = () => {
     });
   };
   
-  const handleConfirmPlan = () => {
-    if (!selectedPlan) return;
-  
-    Modal.confirm({
-      title: '确认执行发布计划',
-      content: `确定要执行从 ${selectedPlan.startDate} 至 ${selectedPlan.endDate} 的发布计划吗？`,
-      onOk: () => {
-        message.success('发布计划已确认，将按计划执行！');
-        // TODO: 实现实际的发布逻辑
-      }
-    });
-  };
 
 
   const dateCellRender = (date: Dayjs) => {
@@ -726,16 +736,144 @@ const PublishPlan: React.FC = () => {
   };
 
   const renderTaskView = () => {
+    // 定义技能列表数据
+    const skillsList = [
+      {
+        id: 'daily',
+        name: '日常内容托管',
+        description: '定期基于素材库图片与商品进行创作',
+        enabled: enableDailyCreation,
+        setEnabled: setEnableDailyCreation,
+        icon: <AppstoreOutlined />,
+        color: '#1890ff',
+        content: [
+          ...mockContentData.slice(0, 3).map(item => ({
+            id: `daily-${item.id}`,
+            title: item.title,
+            content: '基于素材库的日常创作内容，结合店铺商品生成有吸引力的内容...',
+            imageUrl: `https://picsum.photos/400/400?random=${Math.floor(Math.random() * 100)}`,
+            scheduledTime: item.publishTime,
+            platforms: { 
+              xiaohongshu: {
+                content: '',
+                title: '',
+                imageUrl: ''
+              },
+              wechat: {
+                content: '',
+                title: '',
+                imageUrl: ''
+              }
+            }
+          }))
+        ]
+      },
+      {
+        id: 'hotTopic',
+        name: '热点创作',
+        description: '结合外部热点数据进行创作',
+        enabled: enableHotTopicCreation,
+        setEnabled: setEnableHotTopicCreation,
+        icon: <RiseOutlined />,
+        color: '#fa541c',
+        content: [
+          ...mockContentData.slice(3, 5).map(item => ({
+            id: `hot-${item.id}`,
+            title: `热点：${item.title}`,
+            content: '结合当前热点话题创作的内容，紧跟潮流增加曝光率...',
+            imageUrl: `https://picsum.photos/400/400?random=${Math.floor(Math.random() * 100) + 100}`,
+            scheduledTime: item.publishTime,
+            platforms: { 
+              xiaohongshu: {
+                content: '',
+                title: '',
+                imageUrl: ''
+              },
+              wechat: {
+                content: '',
+                title: '',
+                imageUrl: ''
+              }
+            }
+          }))
+        ]
+      },
+      {
+        id: 'newProduct',
+        name: '商品上新创作',
+        description: '商品上新时自动进行创作',
+        enabled: enableNewProductCreation,
+        setEnabled: setEnableNewProductCreation,
+        icon: <ShoppingOutlined />,
+        color: '#52c41a',
+        content: [
+          ...mockContentData.slice(5, 8).map(item => ({
+            id: `product-${item.id}`,
+            title: `新品：${item.title}`,
+            content: '针对新上架商品自动创作的推广内容，突出商品卖点...',
+            imageUrl: `https://picsum.photos/400/400?random=${Math.floor(Math.random() * 100) + 200}`,
+            scheduledTime: item.publishTime,
+            platforms: { 
+              xiaohongshu: {
+                content: '',
+                title: '',
+                imageUrl: ''
+              },
+              wechat: {
+                content: '',
+                title: '',
+                imageUrl: ''
+              }
+            }
+          }))
+        ]
+      },
+      {
+        id: 'assist',
+        name: '辅助创作',
+        description: 'AI辅助你进行内容创作',
+        enabled: enableAssistCreation,
+        setEnabled: setEnableAssistCreation,
+        icon: <EditOutlined />,
+        color: '#722ed1',
+        content: [
+          ...mockContentData.slice(2, 4).map(item => ({
+            id: `assist-${item.id}`,
+            title: `${item.title}`,
+            content: 'AI辅助创作的内容，通过简单的提示词由你主导创作方向...',
+            imageUrl: `https://picsum.photos/400/400?random=${Math.floor(Math.random() * 100) + 300}`,
+            scheduledTime: item.publishTime,
+            platforms: { 
+              xiaohongshu: {
+                content: '',
+                title: '',
+                imageUrl: ''
+              },
+              wechat: {
+                content: '',
+                title: '',
+                imageUrl: ''
+              }
+            }
+          }))
+        ]
+      }
+    ];
+
+    // 获取当前选中的技能
+    const currentSkill = skillsList.find(skill => skill.id === selectedSkill) || skillsList[0];
+
     return (
       <div style={{ display: 'flex', gap: '24px' }}>
-        {/* 左侧计划列表 */}
+        {/* 左侧技能列表 */}
         <div style={{ 
           width: '260px', 
           backgroundColor: '#f7f7f7', 
           padding: '16px',
           borderRadius: '8px',
-          height: 'calc(100vh - 260px)',
-          overflow: 'auto'
+          height: 'calc(100vh - 200px)',
+          overflow: 'auto',
+          flexShrink: 0
         }}>
           <div style={{ 
             fontWeight: 'bold', 
@@ -743,69 +881,100 @@ const PublishPlan: React.FC = () => {
             marginBottom: '16px',
             padding: '0 8px'
           }}>
-            发布计划列表
+            创作技能列表
           </div>
           
-          {plans.map(plan => (
+          {skillsList.map(skill => (
             <div 
-              key={plan.id}
-              onClick={() => setSelectedPlan(plan)}
+              key={skill.id}
+              onClick={() => setSelectedSkill(skill.id)}
               style={{ 
                 padding: '12px 16px',
                 marginBottom: '12px',
-                backgroundColor: selectedPlan?.id === plan.id ? '#fff' : 'transparent',
+                backgroundColor: selectedSkill === skill.id ? '#fff' : 'transparent',
                 borderRadius: '8px',
                 cursor: 'pointer',
-                border: selectedPlan?.id === plan.id ? '1px solid #ffffff' : '1px solid transparent',
-                boxShadow: selectedPlan?.id === plan.id ? '0 2px 8px rgba(0, 0, 0, 0.05)' : 'none',
+                border: selectedSkill === skill.id ? '1px solid #ffffff' : '1px solid transparent',
+                boxShadow: selectedSkill === skill.id ? '0 2px 8px rgba(0, 0, 0, 0.05)' : 'none',
                 transition: 'all 0.3s'
               }}
             >
               <div style={{ 
-                fontWeight: selectedPlan?.id === plan.id ? 'bold' : 'normal',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontWeight: selectedSkill === skill.id ? 'bold' : 'normal',
                 marginBottom: '4px',
-                color: selectedPlan?.id === plan.id ? '#1890ff' : '#333'
+                color: selectedSkill === skill.id ? skill.color : '#333'
               }}>
-                {plan.name}
+                <span style={{ 
+                  display: 'inline-flex',
+                  padding: '4px',
+                  borderRadius: '4px',
+                  backgroundColor: `${skill.color}10`
+                }}>
+                  {skill.icon}
+                </span>
+                {skill.name}
+                <Badge status={skill.enabled ? "success" : "default"} style={{ marginLeft: 'auto' }} />
               </div>
-              <div style={{ fontSize: '12px', color: '#999' }}>
-                {plan.startDate} - {plan.endDate}
+              <div style={{ fontSize: '12px', color: '#666' }}>
+                {skill.description}
               </div>
               <div style={{ 
                 fontSize: '12px', 
-                color: '#666', 
+                color: '#999', 
                 marginTop: '4px',
-                display: 'flex',
-                justifyContent: 'space-between'
               }}>
-                <span>内容数量: {plan.notes.length}</span>
-                <span>{plan.notes.some(note => note.status === 'published') ? '部分已发布' : '计划中'}</span>
+                {skill.enabled ? `已创作内容：${skill.content.length}篇` : '未启用'}
               </div>
             </div>
           ))}
         </div>
 
         {/* 右侧内容区域 */}
-        <div style={{ flex: 1 }}>
-          {selectedPlan && (
+        <div style={{ flex: 1, overflow: 'auto', maxWidth: 'calc(100vw - 250px)' }}>
+          {/* 辅助创作技能 */}
+          {currentSkill.id === 'assist' && (
             <>
-              {/* 确认计划按钮 */}
               <div style={{ 
                 display: 'flex', 
-                justifyContent: 'flex-end', 
+                justifyContent: 'space-between', 
+                alignItems: 'center',
                 marginBottom: '24px',
                 padding: '0px 16px'
               }}>
-                <Button type="primary" onClick={handleConfirmPlan}>确认计划</Button>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '8px',
+                  fontWeight: 'bold',
+                  fontSize: '16px',
+                  color: currentSkill.color
+                }}>
+                  <span style={{ 
+                    display: 'inline-flex',
+                    padding: '4px',
+                    borderRadius: '4px',
+                    backgroundColor: `${currentSkill.color}10`
+                  }}>
+                    {currentSkill.icon}
+                  </span>
+                  {currentSkill.name}
+                </div>
+                <Space>
+                  <Button type="primary" icon={<PlusOutlined />} onClick={showSingleNoteDrawer}>
+                    创作笔记
+                  </Button>
+                </Space>
               </div>
               
-              {/* 笔记列表 */}
               <div style={{ 
                 display: 'grid', 
                 gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', 
                 gap: '16px' 
               }}>
-                {selectedPlan.notes.map(note => (
+                {currentSkill.content.map(note => (
                   <Card 
                     key={note.id}
                     hoverable
@@ -826,7 +995,7 @@ const PublishPlan: React.FC = () => {
                       }
                     />
                     <div style={{ marginTop: '8px', fontSize: '11px', color: '#999' }}>
-                      计划发布时间: {dayjs(note.scheduledTime || selectedPlan.startDate).format('YYYY-MM-DD HH:mm')}
+                      计划发布时间: {dayjs(note.scheduledTime).format('YYYY-MM-DD HH:mm')}
                     </div>
                     {note.platforms && (
                       <div style={{ marginTop: '6px' }}>
@@ -839,251 +1008,688 @@ const PublishPlan: React.FC = () => {
               </div>
             </>
           )}
-        </div>
-      </div>
-    );
-  };
-
-  const renderTimelineView = () => {
-    const allNotes = plans.flatMap(plan => 
-      plan.notes.map((note, index) => ({
-        ...note,
-        planName: plan.name || '未命名计划',
-        planId: plan.id,
-        scheduledTime: dayjs(plan.startDate).add(index, 'days').format('YYYY-MM-DD'),
-        account: mockAccounts.find(acc => acc.id === plan.accountId)
-      }))
-    ).sort((a, b) => dayjs(b.scheduledTime).diff(dayjs(a.scheduledTime))); // 修改排序为倒序
-
-    const groupedNotes = allNotes.reduce((acc, note) => {
-      const date = note.scheduledTime;
-      if (!acc[date]) {
-        acc[date] = [];
-      }
-      acc[date].push(note);
-      return acc;
-    }, {} as Record<string, typeof allNotes>);
-
-    return (
-      <div style={{ padding: '16px', display: 'flex' }}>
-        <Timeline 
-          mode="left"
-          style={{ 
-            flex: '0 0 200px',
-            borderRight: '1px solid #f0f0f0',
-            paddingRight: '16px',
-            marginRight: '16px'
-          }}
-        >
-          {Object.entries(groupedNotes).map(([date]) => (
-            <Timeline.Item 
-              key={date}
-              label={
-                <div style={{
-                  fontSize: '12px',
-                  whiteSpace: 'nowrap',
-                  padding: '4px 0'
-                }}>
-                  {dayjs(date).format('YYYY年MM月DD日')}
+          
+          {/* 非辅助创作技能且未开启时显示配置界面 */}
+          {currentSkill.id !== 'assist' && !currentSkill.enabled ? (
+            <Card 
+              title={
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ 
+                      display: 'inline-flex',
+                      padding: '6px',
+                      borderRadius: '6px',
+                      backgroundColor: `${currentSkill.color}10`,
+                      color: currentSkill.color
+                    }}>
+                      {currentSkill.icon}
+                    </span>
+                    <span>{currentSkill.name}技能</span>
+                  </div>
+                  <Button 
+                    type="primary" 
+                    onClick={() => {
+                      currentSkill.setEnabled(true);
+                      message.success(`已开启${currentSkill.name}技能`);
+                    }}
+                  >
+                    开启{currentSkill.name}技能
+                  </Button>
                 </div>
               }
-              style={{
-                paddingBottom: '16px'
-              }}
-            />
-          ))}
-        </Timeline>
-        <div style={{ flex: 1, overflow: 'auto' }}>
-          {Object.entries(groupedNotes).map(([date, notes]) => (
-            <div 
-              key={date}
-              style={{ 
-                marginBottom: '24px',
-              }}
             >
-              <div style={{ 
-                fontSize: '16px',
-                fontWeight: 'bold',
-                marginBottom: '16px',
-                color: '#1890ff',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <CalendarOutlined />
-                {dayjs(date).format('YYYY年MM月DD日')}
-                <span style={{ 
-                  fontSize: '14px',
-                  fontWeight: 'normal',
-                  color: '#666',
-                  marginLeft: '8px'
-                }}>
-                  {notes.length} 篇笔记
-                </span>
+              <div style={{ padding: '0 0 20px 0' }}>
+                <div style={{ marginBottom: '24px', fontSize: '16px', width: '100%' }}>
+                  {currentSkill.id === 'daily' && (
+                    <div style={{ marginBottom: '24px', width: '100%' }}>
+                      <p>AI会根据您的素材库和商品信息，定期创作高质量的日常内容。</p>
+                      <br></br>
+
+                      <Card style={{ marginBottom: '16px' }} title="创作频率">
+                        <div style={{ padding: '0' }}>
+                          <div style={{ marginBottom: '16px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                            <div style={{ flex: '1', minWidth: '200px' }}>
+                              <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>发布频率</div>
+                              <Select
+                                defaultValue="daily1"
+                                style={{ width: '100%' }}
+                              >
+                                <Select.Option value="daily1">每日一篇</Select.Option>
+                                <Select.Option value="daily2">每日两篇</Select.Option>
+                                <Select.Option value="daily3">每日三篇</Select.Option>
+                                <Select.Option value="twoday1">两日一篇</Select.Option>
+                              </Select>
+                            </div>
+                            
+                            <div style={{ flex: '1', minWidth: '200px' }}>
+                              <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>发布时间</div>
+                              <Select
+                                mode="multiple"
+                                defaultValue={['10:00', '20:00']}
+                                style={{ width: '100%' }}
+                              >
+                                <Select.Option value="09:00">上午9:00</Select.Option>
+                                <Select.Option value="10:00">上午10:00</Select.Option>
+                                <Select.Option value="12:00">中午12:00</Select.Option>
+                                <Select.Option value="15:00">下午15:00</Select.Option>
+                                <Select.Option value="18:00">晚上18:00</Select.Option>
+                                <Select.Option value="20:00">晚上20:00</Select.Option>
+                              </Select>
+                            </div>
+                          </div>
+                          
+                          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                            <div style={{ flex: '1', minWidth: '200px' }}>
+                              <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>AI提前几天通知我审批内容</div>
+                              <Select
+                                value={notifyDaysBeforePublish}
+                                onChange={(value) => setNotifyDaysBeforePublish(value)}
+                                style={{ width: '100%' }}
+                              >
+                                <Select.Option value={1}>提前1天</Select.Option>
+                                <Select.Option value={2}>提前2天</Select.Option>
+                                <Select.Option value={3}>提前3天</Select.Option>
+                                <Select.Option value={5}>提前5天</Select.Option>
+                                <Select.Option value={7}>提前7天</Select.Option>
+                              </Select>
+                            </div>
+                            
+                            <div style={{ flex: '1', minWidth: '200px' }}>
+                              <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>一次性审批几天的发布内容</div>
+                              <Select
+                                value={publishQuantity}
+                                onChange={(value) => setPublishQuantity(value)}
+                                style={{ width: '100%' }}
+                              >
+                                <Select.Option value="daily">7天内容</Select.Option>
+                                <Select.Option value="weekly">每周三篇</Select.Option>
+                                <Select.Option value="biweekly">每两周五篇</Select.Option>
+                              </Select>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+
+                      <Card style={{ marginBottom: '16px' }} title="图片源选择">
+                        <div style={{ padding: '0' }}>
+                          <div style={{ marginBottom: '16px' }}>
+                            <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>选图模式</div>
+                            <Radio.Group 
+                              defaultValue="auto" 
+                              style={{ marginBottom: '16px' }}
+                              onChange={(e) => setImageSelectMode(e.target.value)}
+                            >
+                              <Radio value="auto">自动选图</Radio>
+                              <Radio value="manual">手动选图</Radio>
+                            </Radio.Group>
+
+                            {imageSelectMode === 'auto' ? (
+                              <>
+                                <div style={{ marginBottom: '8px', fontSize: '14px', color: '#666' }}>
+                                  AI将在所选素材库分类中，自动为每篇内容匹配最合适的图片
+                                </div>
+                                <Checkbox.Group 
+                                  style={{ width: '100%' }} 
+                                  defaultValue={['product', 'fashion']}
+                                >
+                                  <Row>
+                                    <Col span={8}><Checkbox value="product">商品图片</Checkbox></Col>
+                                    <Col span={8}><Checkbox value="fashion">时尚生活</Checkbox></Col>
+                                    <Col span={8}><Checkbox value="people">人物图片</Checkbox></Col>
+                                    <Col span={8}><Checkbox value="food">美食图片</Checkbox></Col>
+                                    <Col span={8}><Checkbox value="scene">场景图片</Checkbox></Col>
+                                    <Col span={8}><Checkbox value="travel">旅行图片</Checkbox></Col>
+                                  </Row>
+                                </Checkbox.Group>
+                              </>
+                            ) : (
+                              <>
+                                <div style={{ marginBottom: '8px', fontSize: '14px', color: '#666' }}>
+                                  AI将在您指定的图片中，自动为每篇内容选择最合适的图片
+                                </div>
+                                <div style={{ 
+                                  border: '1px dashed #d9d9d9',
+                                  borderRadius: '8px',
+                                  padding: '16px',
+                                  backgroundColor: '#fafafa'
+                                }}>
+                                  <div style={{ 
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
+                                    gap: '8px',
+                                    marginBottom: '16px'
+                                  }}>
+                                    {selectedImages.map((image, index) => (
+                                      <div 
+                                        key={index}
+                                        style={{ 
+                                          position: 'relative',
+                                          aspectRatio: '1',
+                                          borderRadius: '4px',
+                                          overflow: 'hidden'
+                                        }}
+                                      >
+                                        <img 
+                                          src={image} 
+                                          style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            objectFit: 'cover'
+                                          }}
+                                          alt={`已选图片 ${index + 1}`}
+                                        />
+                                        <Button
+                                          type="text"
+                                          icon={<DeleteOutlined />}
+                                          style={{
+                                            position: 'absolute',
+                                            top: '4px',
+                                            right: '4px',
+                                            background: 'rgba(255,255,255,0.8)',
+                                            padding: '4px',
+                                            minWidth: 'unset',
+                                            height: 'unset'
+                                          }}
+                                          onClick={() => {
+                                            const newImages = [...selectedImages];
+                                            newImages.splice(index, 1);
+                                            setSelectedImages(newImages);
+                                          }}
+                                        />
+                                      </div>
+                                    ))}
+                                    <Button 
+                                      type="dashed"
+                                      style={{ 
+                                        height: '100%',
+                                        aspectRatio: '1',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                      }}
+                                      onClick={() => {
+                                        Modal.info({
+                                          title: '选择图片',
+                                          width: 800,
+                                          content: (
+                                            <div style={{ 
+                                              display: 'grid', 
+                                              gridTemplateColumns: 'repeat(4, 1fr)', 
+                                              gap: 12,
+                                              padding: '12px 0'
+                                            }}>
+                                              {Array(12).fill(null).map((_, index) => (
+                                                <div
+                                                  key={index}
+                                                  style={{
+                                                    border: '1px solid #f0f0f0',
+                                                    borderRadius: 8,
+                                                    padding: 4,
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.3s'
+                                                  }}
+                                                  onClick={() => {
+                                                    const imageUrl = `https://picsum.photos/400/400?random=${index}`;
+                                                    if (!selectedImages.includes(imageUrl)) {
+                                                      setSelectedImages([...selectedImages, imageUrl]);
+                                                    }
+                                                  }}
+                                                >
+                                                  <img
+                                                    src={`https://picsum.photos/400/400?random=${index}`}
+                                                    alt={`素材 ${index + 1}`}
+                                                    style={{ 
+                                                      width: '100%', 
+                                                      height: 150, 
+                                                      objectFit: 'cover',
+                                                      borderRadius: 4
+                                                    }}
+                                                  />
+                                                </div>
+                                              ))}
+                                            </div>
+                                          ),
+                                          onOk() {}
+                                        });
+                                      }}
+                                    >
+                                      <PlusOutlined />
+                                    </Button>
+                                  </div>
+                                  <div style={{ fontSize: '12px', color: '#999', textAlign: 'center' }}>
+                                    已选择 {selectedImages.length} 张图片
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </Card>
+
+                      <Card style={{ marginBottom: '16px' }} title="主推商品">
+                        <div style={{ padding: '0' }}>
+                          <div className="setting-section">
+                            <Table
+                              dataSource={[
+                                {
+                                  id: '1',
+                                  name: '设计感泡泡袖连衣裙',
+                                  category: '服装',
+                                  price: '¥299'
+                                },
+                                {
+                                  id: '2',
+                                  name: '多效修护眼霜',
+                                  category: '护肤',
+                                  price: '¥219'
+                                },
+                                {
+                                  id: '3',
+                                  name: '法式复古小方包',
+                                  category: '配饰',
+                                  price: '¥399'
+                                },
+                              ]}
+                              columns={[
+                                {
+                                  title: '商品名称',
+                                  dataIndex: 'name',
+                                  key: 'name',
+                                },
+                                {
+                                  title: '分类',
+                                  dataIndex: 'category',
+                                  key: 'category',
+                                },
+                                {
+                                  title: '价格',
+                                  dataIndex: 'price',
+                                  key: 'price',
+                                },
+                                {
+                                  title: '操作',
+                                  key: 'action',
+                                  render: (_) => (
+                                    <Button type="link" danger size="small">
+                                      删除
+                                    </Button>
+                                  ),
+                                },
+                              ]}
+                              size="small"
+                              pagination={false}
+                            />
+                            <Button 
+                              type="dashed" 
+                              block 
+                              icon={<PlusOutlined />} 
+                              style={{ marginTop: '16px' }}
+                            >
+                              添加主推商品
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    </div>
+                  )}
+                  {currentSkill.id === 'hotTopic' && (
+                    <>
+                      <p>AI将实时监测行业热点和相关趋势，创作紧跟热点的内容。</p>
+                      <p>提升内容的时效性和曝光率，让您的账号更具影响力。</p>
+                    </>
+                  )}
+                  {currentSkill.id === 'newProduct' && (
+                    <>
+                      <p>当您添加新商品时，AI会自动识别并创作推广这些新品的内容。</p>
+                      <p>无需人工干预，让新品自动获得曝光和销售机会。</p>
+                    </>
+                  )}
+                </div>
+                
+                <div style={{ marginBottom: '24px', width: '100%' }}>
+                  {currentSkill.id === 'hotTopic' && (
+                    <div style={{ marginBottom: '24px', width: '100%' }}>
+                      <Card title="热点相关度配置">
+                        <div style={{ marginBottom: '16px' }}>
+                          <div style={{ marginBottom: '8px' }}>相关度阈值（仅创作与您业务相关度高于此阈值的热点内容）：</div>
+                          <Select 
+                            value={hotTopicRelevance} 
+                            onChange={(value: number) => {
+                              setHotTopicRelevance(value);
+                            }}
+                            style={{ width: 120 }}
+                          >
+                            <Select.Option value={50}>50%</Select.Option>
+                            <Select.Option value={60}>60%</Select.Option>
+                            <Select.Option value={70}>70%</Select.Option>
+                            <Select.Option value={80}>80%</Select.Option>
+                            <Select.Option value={90}>90%</Select.Option>
+                          </Select>
+                        </div>
+                      </Card>
+
+                      <Card title="发布策略" style={{ marginTop: '16px' }}>
+                        <div style={{ marginBottom: '16px' }}>
+                          <div style={{ marginBottom: '8px', fontWeight: 'bold' }}>当出现热点内容时：</div>
+                          <Radio.Group 
+                            value={hotTopicStrategy.mode}
+                            onChange={(e: RadioChangeEvent) => setHotTopicStrategy({
+                              ...hotTopicStrategy,
+                              mode: e.target.value as 'additional' | 'replace'
+                            })}
+                          >
+                            <Space direction="vertical">
+                              <Radio value="additional">额外发布一篇内容</Radio>
+                              <Radio value="replace">替换已计划的内容（根据优先级）</Radio>
+                            </Space>
+                          </Radio.Group>
+                        </div>
+
+                        <div>
+                          <div style={{ marginBottom: '8px', fontWeight: 'bold' }}>内容优先级排序：</div>
+                          <div style={{ color: '#666', fontSize: '12px', marginBottom: '12px' }}>
+                            拖动调整顺序，优先级从高到低
+                          </div>
+                          <div style={{ 
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '8px'
+                          }}>
+                            {hotTopicStrategy.priorities.map((item, index) => (
+                              <div
+                                key={item}
+                                style={{
+                                  padding: '8px 16px',
+                                  backgroundColor: '#f5f5f5',
+                                  borderRadius: '4px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  cursor: 'move'
+                                }}
+                              >
+                                <div style={{ marginRight: '8px', color: '#999' }}>{index + 1}</div>
+                                {item}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </Card>
+                    </div>
+                  )}
+                  
+                  {currentSkill.id === 'newProduct' && (
+                    <div style={{ marginBottom: '24px', width: '100%' }}>
+                      <Card title="推广力度">
+                        <Select defaultValue="medium" style={{ width: 300 }}>
+                          <Select.Option value="light">轻度推广 (每个新品1篇内容)</Select.Option>
+                          <Select.Option value="medium">中度推广 (每个新品2篇内容)</Select.Option>
+                          <Select.Option value="heavy">重度推广 (每个新品3篇内容)</Select.Option>
+                        </Select>
+                      </Card>
+
+                      <Card title="发布策略" style={{ marginTop: '16px' }}>
+                        <div style={{ marginBottom: '16px' }}>
+                          <div style={{ marginBottom: '8px', fontWeight: 'bold' }}>当有新品上架时：</div>
+                          <Radio.Group 
+                            value={newProductStrategy.mode}
+                            onChange={(e: RadioChangeEvent) => setNewProductStrategy({
+                              ...newProductStrategy,
+                              mode: e.target.value as 'additional' | 'replace'
+                            })}
+                          >
+                            <Space direction="vertical">
+                              <Radio value="additional">额外发布一篇内容</Radio>
+                              <Radio value="replace">替换已计划的内容（根据优先级）</Radio>
+                            </Space>
+                          </Radio.Group>
+                        </div>
+
+                        <div>
+                          <div style={{ marginBottom: '8px', fontWeight: 'bold' }}>内容优先级排序：</div>
+                          <div style={{ color: '#666', fontSize: '12px', marginBottom: '12px' }}>
+                            拖动调整顺序，优先级从高到低
+                          </div>
+                          <div style={{ 
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '8px'
+                          }}>
+                            {newProductStrategy.priorities.map((item, index) => (
+                              <div
+                                key={item}
+                                style={{
+                                  padding: '8px 16px',
+                                  backgroundColor: '#f5f5f5',
+                                  borderRadius: '4px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  cursor: 'move'
+                                }}
+                              >
+                                <div style={{ marginRight: '8px', color: '#999' }}>{index + 1}</div>
+                                {item}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </Card>
+                    </div>
+                  )}
+                </div>
+                
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                  <Button 
+                    type="primary" 
+                    size="large"
+                    onClick={() => {
+                      currentSkill.setEnabled(true);
+                      message.success(`已开启${currentSkill.name}技能`);
+                    }}
+                  >
+                    开启{currentSkill.name}技能
+                  </Button>
+                </div>
               </div>
+            </Card>
+          ) : currentSkill.id !== 'assist' ? (
+            // 非辅助创作技能且已开启时显示内容列表
+            <>
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center',
+                marginBottom: '24px',
+                padding: '0px 16px'
+              }}>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '8px',
+                  fontWeight: 'bold',
+                  fontSize: '16px',
+                  color: currentSkill.color
+                }}>
+                  <span style={{ 
+                    display: 'inline-flex',
+                    padding: '4px',
+                    borderRadius: '4px',
+                    backgroundColor: `${currentSkill.color}10`
+                  }}>
+                    {currentSkill.icon}
+                  </span>
+                  {currentSkill.name}技能创作内容
+                </div>
+                <Space>
+                  <Button type="default" icon={<SettingOutlined />} onClick={() => setShowSkillConfig(true)}>
+                    编辑配置
+                  </Button>
+                  <Button type="primary" danger onClick={() => {
+                    currentSkill.setEnabled(false);
+                    message.info(`已关闭${currentSkill.name}技能`);
+                  }}>
+                    关闭技能
+                  </Button>
+                </Space>
+              </div>
+
+              {/* 技能配置抽屉 */}
+              <Drawer
+                title={`${currentSkill.name}技能配置`}
+                placement="right"
+                width={600}
+                onClose={() => setShowSkillConfig(false)}
+                open={showSkillConfig}
+                extra={
+                  <Button type="primary" onClick={() => {
+                    setShowSkillConfig(false);
+                    message.success('配置已保存');
+                  }}>
+                    保存配置
+                  </Button>
+                }
+              >
+                {currentSkill.id === 'daily' && (
+                  <div style={{ marginBottom: '24px', width: '100%' }}>
+                    <p>AI会根据您的素材库和商品信息，定期创作高质量的日常内容。</p>
+                    <p></p>
+
+                    <Card style={{ marginBottom: '16px' }} title="创作频率">
+                      <div style={{ padding: '0' }}>
+                        <div style={{ marginBottom: '16px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                          <div style={{ flex: '1', minWidth: '200px' }}>
+                            <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>发布频率</div>
+                            <Select
+                              defaultValue="daily1"
+                              style={{ width: '100%' }}
+                            >
+                              <Select.Option value="daily1">每日一篇</Select.Option>
+                              <Select.Option value="daily2">每日两篇</Select.Option>
+                              <Select.Option value="daily3">每日三篇</Select.Option>
+                              <Select.Option value="twoday1">两日一篇</Select.Option>
+                            </Select>
+                          </div>
+                          
+                          <div style={{ flex: '1', minWidth: '200px' }}>
+                            <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>发布时间</div>
+                            <Select
+                              mode="multiple"
+                              defaultValue={['10:00', '20:00']}
+                              style={{ width: '100%' }}
+                            >
+                              <Select.Option value="09:00">上午9:00</Select.Option>
+                              <Select.Option value="10:00">上午10:00</Select.Option>
+                              <Select.Option value="12:00">中午12:00</Select.Option>
+                              <Select.Option value="15:00">下午15:00</Select.Option>
+                              <Select.Option value="18:00">晚上18:00</Select.Option>
+                              <Select.Option value="20:00">晚上20:00</Select.Option>
+                            </Select>
+                          </div>
+                        </div>
+                        
+                        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                          <div style={{ flex: '1', minWidth: '200px' }}>
+                            <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>AI提前几天通知我审批内容</div>
+                            <Select
+                              value={notifyDaysBeforePublish}
+                              onChange={(value) => setNotifyDaysBeforePublish(value)}
+                              style={{ width: '100%' }}
+                            >
+                              <Select.Option value={1}>提前1天</Select.Option>
+                              <Select.Option value={2}>提前2天</Select.Option>
+                              <Select.Option value={3}>提前3天</Select.Option>
+                              <Select.Option value={5}>提前5天</Select.Option>
+                              <Select.Option value={7}>提前7天</Select.Option>
+                            </Select>
+                          </div>
+                          
+                          <div style={{ flex: '1', minWidth: '200px' }}>
+                            <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>一次性审批几天的发布内容</div>
+                            <Select
+                              value={publishQuantity}
+                              onChange={(value) => setPublishQuantity(value)}
+                              style={{ width: '100%' }}
+                            >
+                              <Select.Option value="daily">7天内容</Select.Option>
+                              <Select.Option value="weekly">每周三篇</Select.Option>
+                              <Select.Option value="biweekly">每两周五篇</Select.Option>
+                            </Select>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                    <Card style={{ marginBottom: '16px' }} title="图片源选择">
+                      {/* 保持原有的图片源选择配置内容 */}
+                      // ... existing code ...
+                    </Card>
+                    <Card style={{ marginBottom: '16px' }} title="主推商品">
+                      {/* 保持原有的主推商品配置内容 */}
+                      // ... existing code ...
+                    </Card>
+                  </div>
+                )}
+                {currentSkill.id === 'hotTopic' && (
+                  <div style={{ marginBottom: '24px', width: '100%' }}>
+                    <Card title="热点相关度配置">
+                      {/* 保持原有的热点相关度配置内容 */}
+                      // ... existing code ...
+                    </Card>
+                  </div>
+                )}
+                {currentSkill.id === 'newProduct' && (
+                  <div style={{ marginBottom: '24px', width: '100%' }}>
+                    <Card title="推广力度">
+                      {/* 保持原有的推广力度配置内容 */}
+                      // ... existing code ...
+                    </Card>
+                  </div>
+                )}
+              </Drawer>
+              
+              {/* 笔记列表 */}
               <div style={{ 
                 display: 'grid', 
-                gridTemplateColumns: 'repeat(3, 1fr)', 
-                gap: '16px',
-                padding: '4px'
+                gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', 
+                gap: '16px' 
               }}>
-                {notes.map(note => (
-                  <Card
+                {currentSkill.content.map(note => (
+                  <Card 
                     key={note.id}
-                    size="small"
                     hoverable
-                    cover={
-                      <img
-                        alt={note.title}
-                        src={note.imageUrl}
-                        style={{ height: 160, objectFit: 'cover' }}
-                      />
-                    }
+                    style={{ height: '100%', fontSize: '0.9em' }}
+                    cover={note.imageUrl ? <img alt={note.title} src={note.imageUrl} style={{ height: '140px', objectFit: 'cover' }} /> : null}
+                    actions={[
+                      <EditOutlined key="edit" onClick={() => handleEditNote(note)} />,
+                      <DeleteOutlined key="delete" onClick={() => handleDeleteNote(note.id)} />
+                    ]}
+                    size="small"
                   >
                     <Card.Meta
-                      avatar={note.account && <Avatar src={note.account.avatar} />}
-                      title={note.title}
+                      title={<div style={{ fontSize: '0.95em' }}>{note.title}</div>}
                       description={
-                        <Space direction="vertical" size={4} style={{ width: '100%' }}>
-                          <div style={{ fontSize: '12px', color: '#666' }}>
-                            来自：{note.planName}
-                          </div>
-                          <div style={{ fontSize: '12px', color: '#999' }}>
-                            {note.tags?.map(tag => `#${tag}`).join(' ')}
-                          </div>
-                        </Space>
+                        <Typography.Paragraph ellipsis={{ rows: 2 }} style={{ fontSize: '0.85em' }}>
+                          {note.content}
+                        </Typography.Paragraph>
                       }
                     />
-                    <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Button type="link" size="small" onClick={() => handleEdit(note, 0)}>
-                        编辑
-                      </Button>
-                      <Button 
-                        type="text" 
-                        size="small" 
-                        danger
-                        icon={<DeleteOutlined />}
-                        onClick={() => handleDeleteNote(note.id)}
-                      />
+                    <div style={{ marginTop: '8px', fontSize: '11px', color: '#999' }}>
+                      计划发布时间: {dayjs(note.scheduledTime).format('YYYY-MM-DD HH:mm')}
                     </div>
+                    {note.platforms && (
+                      <div style={{ marginTop: '6px' }}>
+                        {note.platforms.xiaohongshu && <Tag color="red" style={{ fontSize: '10px', padding: '0 4px' }}>小红书</Tag>}
+                        {note.platforms.wechat && <Tag color="green" style={{ fontSize: '10px', padding: '0 4px' }}>微信</Tag>}
+                      </div>
+                    )}
                   </Card>
                 ))}
               </div>
-            </div>
-          ))}
+            </>
+          ) : null}
         </div>
       </div>
     );
   };
 
-  const renderListView = () => {
-    const allNotes = plans.flatMap(plan => 
-      plan.notes.map((note, index) => ({
-        ...note,
-        planName: plan.name || '未命名计划',
-        planId: plan.id,
-        scheduledTime: dayjs(plan.startDate).add(index, 'days').format('YYYY-MM-DD'),
-        account: mockAccounts.find(acc => acc.id === plan.accountId),
-        likes: Math.floor(Math.random() * 1000),
-        comments: Math.floor(Math.random() * 100),
-        saves: Math.floor(Math.random() * 500)
-      }))
-    );
-
-    const columns = [
-      {
-        title: '封面',
-        dataIndex: 'imageUrl',
-        key: 'imageUrl',
-        width: 100,
-        render: (imageUrl: string) => (
-          <img src={imageUrl} alt="封面" style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 4 }} />
-        )
-      },
-      {
-        title: '标题',
-        dataIndex: 'title',
-        key: 'title',
-        render: (title: string, record: any) => (
-          <div>
-            <div style={{ fontWeight: 500, marginBottom: 4 }}>{title}</div>
-            <div style={{ fontSize: 12, color: '#666' }}>
-              来自：{record.planName}
-            </div>
-          </div>
-        )
-      },
-      {
-        title: '发布账号',
-        dataIndex: 'account',
-        key: 'account',
-        render: (account: any) => account ? (
-          <Space>
-            <Avatar size="small" src={account.avatar} />
-            <span>{account.nickname}</span>
-          </Space>
-        ) : '-'
-      },
-      {
-        title: '发布时间',
-        dataIndex: 'scheduledTime',
-        key: 'scheduledTime',
-        sorter: (a: any, b: any) => dayjs(a.scheduledTime).unix() - dayjs(b.scheduledTime).unix(),
-        render: (date: string) => dayjs(date).format('YYYY-MM-DD')
-      },
-      {
-        title: '互动数据',
-        key: 'interactions',
-        render: (record: any) => (
-          <Space size={16}>
-            <span>
-              <HeartOutlined /> {record.likes}
-            </span>
-            <span>
-              <MessageOutlined /> {record.comments}
-            </span>
-            <span>
-              <StarOutlined /> {record.saves}
-            </span>
-          </Space>
-        ),
-        sorter: (a: any, b: any) => a.likes - b.likes
-      },
-      {
-        title: '操作',
-        key: 'action',
-        render: (record: any) => (
-          <Space>
-            <Button type="link" size="small" onClick={() => handleEdit(record, 0)}>
-              编辑
-            </Button>
-            <Button 
-              type="text" 
-              size="small" 
-              danger
-              icon={<DeleteOutlined />}
-              onClick={() => handleDeleteNote(record.id)}
-            />
-          </Space>
-        )
-      }
-    ];
-
-    return (
-      <div style={{ padding: '16px' }}>
-        <Table
-          columns={columns}
-          dataSource={allNotes}
-          rowKey="id"
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showTotal: (total) => `共 ${total} 条数据`
-          }}
-        />
-      </div>
-    );
-  };
 
   return (
     <div className="publish-plan-container">
@@ -1417,37 +2023,10 @@ const PublishPlan: React.FC = () => {
           },
           {
             key: 'plan',
-            label: '发布计划',
+            label: '创作',
             children: (
               <div>
-                <div style={{ 
-                  padding: '6px 16px 6px', // 减小上下padding
-                  borderBottom: '1px solid #f0f0f0',
-                  marginBottom: '8px', // 减小下方间距
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}>
-                  <Space size="small"> {/* 减小按钮之间的间距 */}
-                    <Button type="primary" icon={<PlusOutlined />} onClick={showDrawer}>
-                      智能内容规划
-                    </Button>
-                    <Button icon={<PlusOutlined />} onClick={showSingleNoteDrawer}>
-                      创作笔记
-                    </Button>
-                  </Space>
-                  <Radio.Group
-                    value={viewMode}
-                    onChange={e => setViewMode(e.target.value)}
-                    optionType="button"
-                    buttonStyle="solid"
-                  >
-                    <Radio.Button value="task"><AppstoreOutlined /></Radio.Button>
-                    <Radio.Button value="timeline"><UnorderedListOutlined /></Radio.Button>
-                    <Radio.Button value="list"><TableOutlined /></Radio.Button>
-                  </Radio.Group>
-                </div>
-                {viewMode === 'task' ? renderTaskView() : viewMode === 'timeline' ? renderTimelineView() : renderListView()}
+                {renderTaskView()}
               </div>
             )
           },
