@@ -407,6 +407,9 @@ const PublishPlan: React.FC = () => {
   const [imageSelectMode, setImageSelectMode] = useState<'auto' | 'manual'>('auto');
   const [mountType, setMountType] = useState<'none' | 'product' | 'poi'>('none');
 
+  const [contentStyle, setContentStyle] = useState<string>('轻松随意');
+  const [customStyle, setCustomStyle] = useState<string>('');
+
   // 获取当前账号信息
   const currentAccount = mockAccounts.find(acc => acc.id === id);
 
@@ -1044,7 +1047,7 @@ const PublishPlan: React.FC = () => {
                   {currentSkill.id === 'daily' && (
                     <div style={{ marginBottom: '24px', width: '100%' }}>
                       <p>AI会根据您的素材库和商品信息，定期创作高质量的日常内容。</p>
-                      <br></br>
+                      <p>通过智能调度算法，确保内容发布的连续性和稳定性。</p>
 
                       <Card style={{ marginBottom: '16px' }} title="创作频率">
                         <div style={{ padding: '0' }}>
@@ -1127,6 +1130,49 @@ const PublishPlan: React.FC = () => {
                                 <Select.Option value="user3">王五（总监）</Select.Option>
                               </Select>
                             </div>
+                          </div>
+                        </div>
+                      </Card>
+
+                      <Card style={{ marginBottom: '16px' }} title="内容风格">
+                        <div style={{ padding: '0' }}>
+                          <div style={{ marginBottom: '16px' }}>
+                            <div style={{ marginBottom: '8px', fontSize: '14px', color: '#666' }}>
+                              选择AI创作内容的风格基调，影响词汇选择和表达方式
+                            </div>
+                            <Radio.Group 
+                              value={contentStyle}
+                              onChange={(e) => {
+                                setContentStyle(e.target.value);
+                                if (e.target.value !== 'custom') {
+                                  setCustomStyle('');
+                                }
+                              }}
+                              style={{ marginBottom: contentStyle === 'custom' ? '16px' : '0' }}
+                            >
+                              <Space direction="vertical">
+                                <Radio value="轻松随意">轻松随意</Radio>
+                                <Radio value="专业正式">专业正式</Radio>
+                                <Radio value="感性文艺">感性文艺</Radio>
+                                <Radio value="幽默诙谐">幽默诙谐</Radio>
+                                <Radio value="custom">自定义风格</Radio>
+                              </Space>
+                            </Radio.Group>
+                            
+                            {contentStyle === 'custom' && (
+                              <div style={{ marginTop: '16px' }}>
+                                <Input.TextArea
+                                  placeholder="请输入描述风格的词语，如：清新自然、简约现代、温暖治愈..."
+                                  value={customStyle}
+                                  onChange={(e) => setCustomStyle(e.target.value)}
+                                  rows={2}
+                                  style={{ width: '100%' }}
+                                />
+                                <div style={{ fontSize: '12px', color: '#999', marginTop: '8px' }}>
+                                  提示：词语之间可用逗号或空格分隔，建议3-5个词语最佳
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </Card>
@@ -1587,7 +1633,8 @@ const PublishPlan: React.FC = () => {
                 {currentSkill.id === 'daily' && (
                   <div style={{ marginBottom: '24px', width: '100%' }}>
                     <p>AI会根据您的素材库和商品信息，定期创作高质量的日常内容。</p>
-                    <br></br>
+                    <p>通过智能调度算法，确保内容发布的连续性和稳定性。</p>
+
                     <Card style={{ marginBottom: '16px' }} title="创作频率">
                       <div style={{ padding: '0' }}>
                         <div style={{ marginBottom: '16px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
@@ -1669,6 +1716,49 @@ const PublishPlan: React.FC = () => {
                               <Select.Option value="user3">王五（总监）</Select.Option>
                             </Select>
                           </div>
+                        </div>
+                      </div>
+                    </Card>
+
+                    <Card style={{ marginBottom: '16px' }} title="内容风格">
+                      <div style={{ padding: '0' }}>
+                        <div style={{ marginBottom: '16px' }}>
+                          <div style={{ marginBottom: '8px', fontSize: '14px', color: '#666' }}>
+                            选择AI创作内容的风格基调，影响词汇选择和表达方式
+                          </div>
+                          <Radio.Group 
+                            value={contentStyle}
+                            onChange={(e) => {
+                              setContentStyle(e.target.value);
+                              if (e.target.value !== 'custom') {
+                                setCustomStyle('');
+                              }
+                            }}
+                            style={{ marginBottom: contentStyle === 'custom' ? '16px' : '0' }}
+                          >
+                            <Space direction="vertical">
+                              <Radio value="轻松随意">轻松随意</Radio>
+                              <Radio value="专业正式">专业正式</Radio>
+                              <Radio value="感性文艺">感性文艺</Radio>
+                              <Radio value="幽默诙谐">幽默诙谐</Radio>
+                              <Radio value="custom">自定义风格</Radio>
+                            </Space>
+                          </Radio.Group>
+                          
+                          {contentStyle === 'custom' && (
+                            <div style={{ marginTop: '16px' }}>
+                              <Input.TextArea
+                                placeholder="请输入描述风格的词语，如：清新自然、简约现代、温暖治愈..."
+                                value={customStyle}
+                                onChange={(e) => setCustomStyle(e.target.value)}
+                                rows={2}
+                                style={{ width: '100%' }}
+                              />
+                              <div style={{ fontSize: '12px', color: '#999', marginTop: '8px' }}>
+                                提示：词语之间可用逗号或空格分隔，建议3-5个词语最佳
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </Card>
