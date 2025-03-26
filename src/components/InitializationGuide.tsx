@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button, Typography, Form, Input, InputNumber, Radio, Space, Card } from 'antd';
-import { SmileOutlined, UserOutlined, RocketOutlined } from '@ant-design/icons';
+import { SmileOutlined, UserOutlined } from '@ant-design/icons';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -30,7 +30,7 @@ const InitializationGuide: React.FC<InitializationGuideProps> = ({ visible, onCl
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [showAccountConfig, setShowAccountConfig] = useState(false);
   const [showPhaseConfig, setShowPhaseConfig] = useState(false);
-  const [accounts, setAccounts] = useState<AccountConfig[]>([]);
+  const accounts = useState<AccountConfig[]>([])[0];
   const [phaseConfig, setPhaseConfig] = useState<PhaseConfig>({
     nurtureDays: 15,
     autoCreateContent: false,
