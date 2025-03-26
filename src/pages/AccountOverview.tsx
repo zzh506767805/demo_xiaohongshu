@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Card, Row, Col, Button, Modal, Form, Input, Select, Avatar, Statistic, Tooltip, Timeline, Tag, Calendar, Space } from 'antd';
-import { PlusOutlined, UserOutlined, RiseOutlined, QuestionCircleOutlined, SearchOutlined, EditOutlined, SendOutlined, BarChartOutlined, CalendarOutlined } from '@ant-design/icons';
+import { PlusOutlined, UserOutlined, RiseOutlined, QuestionCircleOutlined, SearchOutlined, EditOutlined, SendOutlined, BarChartOutlined, CalendarOutlined, RocketOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import dayjs, { Dayjs } from 'dayjs';
+import InitializationGuide from '../components/InitializationGuide';
 
 interface XHSAccount {
   id: string;
@@ -131,6 +132,7 @@ const mockWorkLogs: WorkLog[] = [
 const AccountOverview: React.FC = () => {
   const navigate = useNavigate();
   const [addAccountVisible, setAddAccountVisible] = useState(false);
+  const [initGuideVisible, setInitGuideVisible] = useState(false);
   const [form] = Form.useForm();
   const [visibleWorkLog, setVisibleWorkLog] = useState<WorkLog | null>(null);
   const [activeAccountFilter] = useState<string | null>(null);
@@ -189,6 +191,14 @@ const AccountOverview: React.FC = () => {
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
         <img src="/Frame 427320693.png" alt="内容托管" height="30" style={{ marginRight: '12px' }} />
         <h1 style={{ fontSize: '22px', fontWeight: 'bold', margin: 0 }}>小红书内容托管</h1>
+        <Button 
+          type="primary"
+          icon={<RocketOutlined />}
+          style={{ marginLeft: 'auto' }}
+          onClick={() => setInitGuideVisible(true)}
+        >
+          系统初始化
+        </Button>
       </div>
       
       <div style={{ fontSize: '14px', lineHeight: '1.6', color: '#666', marginBottom: '20px' }}>
@@ -456,6 +466,11 @@ const AccountOverview: React.FC = () => {
           dateCellRender={dateCellRender}
         />
       </Modal>
+
+      <InitializationGuide 
+        visible={initGuideVisible}
+        onClose={() => setInitGuideVisible(false)}
+      />
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Drawer, Form, DatePicker, Space, List, Card, Modal, message, Input, Radio, Tooltip, Calendar, Tabs, Avatar, Select, Table, Badge, Row, Col, Statistic, Checkbox, Switch, Typography, Tag, Slider } from 'antd';
 import type { RadioChangeEvent } from 'antd';
-import { PlusOutlined, DeleteOutlined, QuestionCircleOutlined, LoadingOutlined, CalendarOutlined, RobotOutlined, LeftOutlined, RightOutlined, ShareAltOutlined, HeartOutlined, MessageOutlined, StarOutlined, EllipsisOutlined, RiseOutlined, AppstoreOutlined, EditOutlined, ShoppingOutlined, SettingOutlined } from '@ant-design/icons';
+import { PlusOutlined, DeleteOutlined, QuestionCircleOutlined, LoadingOutlined, CalendarOutlined, RobotOutlined, LeftOutlined, RightOutlined, ShareAltOutlined, HeartOutlined, MessageOutlined, StarOutlined, EllipsisOutlined, RiseOutlined, AppstoreOutlined, EditOutlined, ShoppingOutlined, SettingOutlined, PictureOutlined } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -88,6 +88,18 @@ interface ContentData {
 interface PublishStrategy {
   mode: 'additional' | 'replace';
   priorities: string[];
+}
+
+interface ImageMaterial {
+  id: string;
+  url: string;
+  createTime: string;
+  tags: string[];
+  usagePlan?: {
+    date: string;
+    title: string;
+    contentType: string;
+  };
 }
 
 const mockAccounts: XHSAccount[] = [
@@ -409,6 +421,44 @@ const PublishPlan: React.FC = () => {
 
   const [contentStyle, setContentStyle] = useState<string>('轻松随意');
   const [customStyle, setCustomStyle] = useState<string>('');
+
+  const [imageMaterials] = useState<ImageMaterial[]>([
+    {
+      id: '1',
+      url: 'https://picsum.photos/400/400?random=1',
+      createTime: '2024-03-20 10:00:00',
+      tags: ['产品图', '实拍'],
+      usagePlan: {
+        date: '2024-03-25',
+        title: '春季新品开箱',
+        contentType: '产品介绍'
+      }
+    },
+    {
+      id: '2',
+      url: 'https://picsum.photos/400/400?random=2',
+      createTime: '2024-03-19 15:30:00',
+      tags: ['场景图', '生活'],
+      usagePlan: {
+        date: '2024-03-26',
+        title: '日常穿搭分享',
+        contentType: '生活记录'
+      }
+    },
+    {
+      id: '3',
+      url: 'https://picsum.photos/400/400?random=3',
+      createTime: '2024-03-18 09:15:00',
+      tags: ['细节图', '产品'],
+      usagePlan: {
+        date: '2024-03-27',
+        title: '产品细节展示',
+        contentType: '产品介绍'
+      }
+    }
+  ]);
+  const [showImagePreview, setShowImagePreview] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<ImageMaterial | null>(null);
 
   // 获取当前账号信息
   const currentAccount = mockAccounts.find(acc => acc.id === id);
@@ -1613,6 +1663,80 @@ const PublishPlan: React.FC = () => {
                   </Button>
                 </Space>
               </div>
+
+              {/* 图片素材预览模块 */}
+              {currentSkill.id === 'daily' && currentSkill.enabled && (
+                <div style={{ 
+                  marginBottom: '24px',
+                  padding: '8px 12px',
+                  backgroundColor: '#f7f7f7',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px'
+                }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '8px',
+                    fontWeight: 'bold',
+                    fontSize: '14px',
+                    color: '#333',
+                    flexShrink: 0
+                  }}>
+                    <PictureOutlined />
+                    即将为你创作的内容素材
+                  </div>
+                  <div style={{ 
+                    display: 'flex', 
+                    gap: '8px',
+                    overflowX: 'auto',
+                    flex: 1
+                  }}>
+                    {imageMaterials.map(image => (
+                      <div
+                        key={image.id}
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '4px',
+                          overflow: 'hidden',
+                          cursor: 'pointer',
+                          position: 'relative',
+                          flexShrink: 0,
+                          border: image.usagePlan ? '2px solid #1890ff' : 'none'
+                        }}
+                        onClick={() => {
+                          setSelectedImage(image);
+                          setShowImagePreview(true);
+                        }}
+                      >
+                        <img
+                          src={image.url}
+                          alt=""
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover'
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <Button 
+                    type="link" 
+                    size="small" 
+                    onClick={() => {
+                      if (imageMaterials.length > 0) {
+                        setSelectedImage(imageMaterials[0]);
+                        setShowImagePreview(true);
+                      }
+                    }}
+                  >
+                    查看创作计划
+                  </Button>
+                </div>
+              )}
 
               {/* 技能配置抽屉 */}
               <Drawer
@@ -3767,8 +3891,80 @@ const PublishPlan: React.FC = () => {
           </div>
         </div>
       </Drawer>
+      <ImagePreviewModal
+        visible={showImagePreview}
+        onClose={() => {
+          setShowImagePreview(false);
+          setSelectedImage(null);
+        }}
+        image={selectedImage}
+      />
     </div>
   );
 };
 
 export default PublishPlan;
+
+// 图片预览弹窗组件
+const ImagePreviewModal: React.FC<{
+  visible: boolean;
+  onClose: () => void;
+  image: ImageMaterial | null;
+}> = ({ visible, onClose, image }) => {
+  if (!image) return null;
+
+  return (
+    <Modal
+      title="图片详情"
+      open={visible}
+      onCancel={onClose}
+      width={800}
+      footer={null}
+    >
+      <div style={{ display: 'flex', gap: '24px' }}>
+        <div style={{ flex: 1 }}>
+          <img
+            src={image.url}
+            alt=""
+            style={{
+              width: '100%',
+              maxHeight: '400px',
+              objectFit: 'contain'
+            }}
+          />
+          <div style={{ marginTop: '16px' }}>
+            <div style={{ marginBottom: '8px' }}>
+              <span style={{ fontWeight: 'bold', marginRight: '8px' }}>创建时间：</span>
+              {dayjs(image.createTime).format('YYYY-MM-DD HH:mm:ss')}
+            </div>
+            <div>
+              <span style={{ fontWeight: 'bold', marginRight: '8px' }}>标签：</span>
+              <Space size={[0, 8]} wrap>
+                {image.tags.map(tag => (
+                  <Tag key={tag}>{tag}</Tag>
+                ))}
+              </Space>
+            </div>
+          </div>
+        </div>
+        {image.usagePlan && (
+          <div style={{ width: '300px', padding: '16px', backgroundColor: '#f7f7f7', borderRadius: '8px' }}>
+            <div style={{ fontWeight: 'bold', marginBottom: '16px' }}>使用计划</div>
+            <div style={{ marginBottom: '12px' }}>
+              <div style={{ color: '#666', fontSize: '12px' }}>计划使用时间</div>
+              <div style={{ fontSize: '14px' }}>{dayjs(image.usagePlan.date).format('YYYY-MM-DD')}</div>
+            </div>
+            <div style={{ marginBottom: '12px' }}>
+              <div style={{ color: '#666', fontSize: '12px' }}>内容标题</div>
+              <div style={{ fontSize: '14px' }}>{image.usagePlan.title}</div>
+            </div>
+            <div>
+              <div style={{ color: '#666', fontSize: '12px' }}>内容类型</div>
+              <div style={{ fontSize: '14px' }}>{image.usagePlan.contentType}</div>
+            </div>
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
+};
