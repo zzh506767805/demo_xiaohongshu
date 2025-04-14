@@ -1,113 +1,406 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Button, Drawer, Form, DatePicker, Space, List, Card, Modal, message, Input, Radio, Tooltip, Calendar, Tabs, Avatar, Select, Table, Badge, Row, Col, Checkbox, Typography, Tag } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Button, Drawer, Form, DatePicker, Space, List, Card, Modal, message, Input, Radio, Tooltip, Calendar, Tabs, Avatar, Select, Table, Badge, Row, Col, Checkbox, Typography, Tag, Slider, InputNumber } from 'antd';
 import type { RadioChangeEvent } from 'antd';
-import { PlusOutlined, DeleteOutlined, QuestionCircleOutlined, LoadingOutlined, RobotOutlined, LeftOutlined, RightOutlined, ShareAltOutlined, HeartOutlined, MessageOutlined, StarOutlined, EllipsisOutlined, RiseOutlined, AppstoreOutlined, EditOutlined, SettingOutlined, PictureOutlined, FireOutlined, EyeOutlined, GiftOutlined, BulbOutlined, ShoppingOutlined } from '@ant-design/icons';
+import { PlusOutlined, DeleteOutlined, QuestionCircleOutlined, LoadingOutlined, CalendarOutlined, RobotOutlined, LeftOutlined, RightOutlined, ShareAltOutlined, HeartOutlined, MessageOutlined, StarOutlined, EllipsisOutlined, RiseOutlined, AppstoreOutlined, EditOutlined, SettingOutlined, PictureOutlined, FireOutlined, EyeOutlined, RetweetOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import OverviewTab from '../components/OverviewTab';
 import PersonalizationTab from '../components/PersonalizationTab';
-import ImagePreviewModal from '../components/ImagePreviewModal';
-import { mockAccounts, mockPlans, mockContentData, mockHotTopics, mockHotTopicsYesterday, mockDateOptions, imageMaterials, dialogHistory } from '../data/ mockPublishplan'; // Adjust path if filename is different
-import { Plan, Note, PublishStrategy, ImageMaterial } from '../types/publish';
 
 dayjs.extend(isBetween);
 
-interface PublishPlanProps {
-  aiAssistantVisible?: boolean;
-  setAiAssistantVisible?: React.Dispatch<React.SetStateAction<boolean>>;
+interface Plan {
+  id: string;
+  name?: string;
+  startDate: string;
+  endDate: string;
+  count: number;
+  notes: Note[];
+  accountId?: string;
 }
 
-const PublishPlan: React.FC<PublishPlanProps> = ({ 
-  aiAssistantVisible: propAiAssistantVisible, 
-  setAiAssistantVisible: propSetAiAssistantVisible 
-}) => {
+interface Note {
+  id: string;
+  title: string;
+  content: string;
+  imageUrl: string;
+  contentType?: '产品介绍' | '使用体验' | '生活记录' | '探店安利' | '干货分享';
+  tone?: '轻松随意' | '专业正式' | '感性文艺' | '幽默诙谐';
+  tags?: string[];
+  scheduledTime?: string;
+  status?: 'published' | 'unpublished';
+}
+
+interface XHSAccount {
+  id: string;
+  avatar: string;
+  nickname: string;
+  followers: number;
+  posts: number;
+  status: 'active' | 'inactive';
+  growth: {
+    followers: number;
+    views: number;
+    likes: number;
+    comments: number;
+    saves: number;
+  };
+  recentPosts: {
+    id: string;
+    title: string;
+    views: number;
+    likes: number;
+    comments: number;
+    saves: number;
+  }[];
+}
+
+interface PublishStrategy {
+  mode: 'additional' | 'replace';
+  priorities: string[];
+}
+
+interface ImageMaterial {
+  id: string;
+  url: string;
+  createTime: string;
+  tags: string[];
+  usagePlan?: {
+    date: string;
+    title: string;
+    contentType: string;
+  };
+}
+
+const mockAccounts: XHSAccount[] = [
+  {
+    id: '1',
+    avatar: 'https://picsum.photos/100/100?random=1',
+    nickname: '时尚生活家',
+    followers: 12580,
+    posts: 326,
+    status: 'active',
+    growth: {
+      followers: 580,
+      views: 125000,
+      likes: 8900,
+      comments: 1200,
+      saves: 3400
+    },
+    recentPosts: [
+      {
+        id: '1',
+        title: '春季穿搭分享',
+        views: 2451,
+        likes: 167,
+        comments: 32,
+        saves: 89
+      },
+      {
+        id: '2',
+        title: '新品开箱测评',
+        views: 1892,
+        likes: 145,
+        comments: 28,
+        saves: 76
+      }
+    ]
+  },
+  {
+    id: '2',
+    avatar: 'https://picsum.photos/100/100?random=2',
+    nickname: '美食探店达人',
+    followers: 45678,
+    posts: 892,
+    status: 'active',
+    growth: {
+      followers: 678,
+      views: 256000,
+      likes: 15600,
+      comments: 2100,
+      saves: 5600
+    },
+    recentPosts: [
+      {
+        id: '3',
+        title: '新开网红店打卡',
+        views: 3421,
+        likes: 156,
+        comments: 42,
+        saves: 89
+      },
+      {
+        id: '4',
+        title: '美食推荐合集',
+        views: 2876,
+        likes: 134,
+        comments: 28,
+        saves: 67
+      }
+    ]
+  },
+  {
+    id: '3',
+    avatar: 'https://picsum.photos/100/100?random=3',
+    nickname: '旅行摄影师',
+    followers: 89012,
+    posts: 567,
+    status: 'inactive',
+    growth: {
+      followers: 0,
+      views: 0,
+      likes: 0,
+      comments: 0,
+      saves: 0
+    },
+    recentPosts: []
+  }
+];
+
+const mockPlans: Plan[] = [
+];
+
+const mockContentData = [
+  {
+    id: '1',
+    title: '夏日护肤必备单品推荐',
+    publishTime: dayjs().add(1, 'day').format('YYYY-MM-DD HH:mm'),
+    imageUrl: 'https://picsum.photos/400/400?random=1'
+  },
+  {
+    id: '2',
+    title: '清爽不油腻的面霜测评',
+    publishTime: dayjs().add(2, 'day').format('YYYY-MM-DD HH:mm'),
+    imageUrl: 'https://picsum.photos/400/400?random=2'
+  },
+  {
+    id: '3',
+    title: '敏感肌的福音-温和清洁',
+    publishTime: dayjs().add(3, 'day').format('YYYY-MM-DD HH:mm'),
+    imageUrl: 'https://picsum.photos/400/400?random=3'
+  },
+  {
+    id: '4',
+    title: '口碑爆款面霜大揭秘',
+    publishTime: dayjs().add(4, 'day').format('YYYY-MM-DD HH:mm'),
+    imageUrl: 'https://picsum.photos/400/400?random=4'
+  },
+  {
+    id: '5',
+    title: '新品首发-玫瑰精华水',
+    publishTime: dayjs().add(5, 'day').format('YYYY-MM-DD HH:mm'),
+    imageUrl: 'https://picsum.photos/400/400?random=5'
+  }
+];
+
+
+// Mock 热点数据
+const mockHotTopics = [
+  {
+    id: 'ht-1',
+    title: '春季流感多发预防指南',
+    relevance: 85,
+    created: false,
+    date: '2024-03-25',
+    views: 1520000,
+    details: '近期气温变化大，流感病例增多，专家建议多注意个人卫生、勤洗手、戴口罩，避免到人员密集场所活动，增强体质预防流感。',
+    relatedProducts: ['维生素C', '口罩', '消毒液'],
+    relatedKeywords: ['流感预防', '春季健康', '免疫力']
+  },
+  {
+    id: 'ht-2',
+    title: '居家小空间收纳技巧',
+    relevance: 92,
+    created: true,
+    date: '2024-03-25',
+    views: 2650000,
+    details: '春季整理季，多功能家具、墙面收纳、抽屉分隔等技巧，让小户型空间利用最大化，打造整洁舒适的居家环境。',
+    relatedProducts: ['收纳盒', '隔板', '挂钩'],
+    relatedKeywords: ['收纳技巧', '小户型', '空间整理']
+  },
+  {
+    id: 'ht-3',
+    title: '春季穿搭流行元素',
+    relevance: 78,
+    created: false,
+    date: '2024-03-25',
+    views: 1890000,
+    details: '2024春季流行色彩包括薄荷绿、柔和蓝、奶油黄，流行元素有蝴蝶结、荷叶边、条纹，轻薄面料成为主流选择。',
+    relatedProducts: ['薄荷绿上衣', '蝴蝶结衬衫', '条纹裙'],
+    relatedKeywords: ['春季潮流', '穿搭技巧', '流行色彩']
+  },
+  {
+    id: 'ht-4',
+    title: '健康低卡减脂餐分享',
+    relevance: 80,
+    created: true,
+    date: '2024-03-25',
+    views: 2150000,
+    details: '春季是减肥好时机，高蛋白低碳水饮食，搭配适量运动，有效促进新陈代谢，健康瘦身不反弹。',
+    relatedProducts: ['减脂餐套装', '轻食沙拉', '蛋白粉'],
+    relatedKeywords: ['减脂餐', '健康饮食', '轻食']
+  }
+];
+
+// 昨日热点数据
+const mockHotTopicsYesterday = [
+  {
+    id: 'ht-5',
+    title: '春季皮肤护理必备品',
+    relevance: 88,
+    created: true,
+    date: '2024-03-24',
+    views: 1820000,
+    details: '春季皮肤易干燥敏感，补水保湿成为首要任务，同时温和去角质，添加维生素C成分护肤品帮助提亮肤色。',
+    relatedProducts: ['保湿面霜', '维C精华', '舒缓喷雾'],
+    relatedKeywords: ['春季护肤', '敏感肌', '补水保湿']
+  },
+  {
+    id: 'ht-6',
+    title: '阳台小花园打造指南',
+    relevance: 76,
+    created: false,
+    date: '2024-03-24',
+    views: 1420000,
+    details: '春季是种植的好时节，阳台种植花草不仅美化环境，还能净化空气，从选盆、选土、选植物三步开始打造专属小花园。',
+    relatedProducts: ['花盆', '营养土', '种子套装'],
+    relatedKeywords: ['阳台花园', '家庭种植', '园艺爱好']
+  }
+];
+
+// 热点日期选项
+const mockDateOptions = [
+  { label: '今日(03-26)', value: 'today' },
+  { label: '昨日(03-25)', value: 'yesterday' },
+  { label: '前日(03-24)', value: 'day_before' }
+];
+
+const PublishPlan: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [form] = Form.useForm();
-  const [singleNoteForm] = Form.useForm();
-  // 添加一个ref用于直接引用TextArea元素
-  const contentTypeInputRef = useRef<any>(null);
-  // 新增 state 用于受控管理内容诉求输入框的值
-  const [contentTypeValue, setContentTypeValue] = useState<string>('');
-  
-  // 抽屉相关状态
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('overview');
+  const [] = useState<'task' | 'timeline' | 'list'>('task');
   const [drawerVisible, setDrawerVisible] = useState(false);
-  const [showSkillConfig, setShowSkillConfig] = useState(false);
   const [singleNoteDrawerVisible, setSingleNoteDrawerVisible] = useState(false);
-  const [currentNoteIndex, setCurrentNoteIndex] = useState(0);
-  const [editingNote, setEditingNote] = useState<Note | null>(null);
-  
-  // 计划相关状态
   const [plans, setPlans] = useState<Plan[]>(mockPlans);  // 使用 mock 数据初始化
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
-  
-  // 获取当前账号信息
-  const currentAccount = mockAccounts.find(acc => acc.id === id);
-  
-  // 热点话题状态
-  const [hotTopicDateFilter, setHotTopicDateFilter] = useState('today');
-  const [expandedTopics, setExpandedTopics] = useState<string[]>([]);
-  
-  // 内容配置相关状态
-  const [activeTab, setActiveTab] = useState('overview');
-  const [calendarVisible, setCalendarVisible] = useState(false);
-  // 使用父组件传递的状态或本地状态
-  const [localAiAssistantVisible, setLocalAiAssistantVisible] = useState(false);
-  const [] = useState(true);
-  
-  // 计算实际使用的状态
-  const aiAssistantVisible = propAiAssistantVisible !== undefined ? propAiAssistantVisible : localAiAssistantVisible;
-  const setAiAssistantVisible = propSetAiAssistantVisible || setLocalAiAssistantVisible;
-  
-  const [] = useState(true);
-  const [] = useState(true);
-  const [] = useState(false);
-  const [contentStyle, setContentStyle] = useState('轻松随意');
-  const [customStyle, setCustomStyle] = useState('');
-  const [selectedImage, setSelectedImage] = useState<ImageMaterial | null>(null);
-  const [showImagePreview, setShowImagePreview] = useState(false);
-  const [showHotTopicModal, setShowHotTopicModal] = useState(false);
-  const [notifyDaysBeforePublish, setNotifyDaysBeforePublish] = useState(2);
-  const [publishQuantity, setPublishQuantity] = useState("daily");
+  const [form] = Form.useForm();
+  const [singleNoteForm] = Form.useForm();
   const [imageSource, setImageSource] = useState('auto');
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
-  const [mountType, setMountType] = useState('none');
-  const [imageSelectMode, setImageSelectMode] = useState('auto');
+  const [editingNote, setEditingNote] = useState<Note | null>(null);
+  const [currentNoteIndex, setCurrentNoteIndex] = useState<number>(-1);
+  const [aiAssistantVisible, setAiAssistantVisible] = useState(false);
+  const [showBadge, setShowBadge] = useState(true);
+  const [calendarVisible, setCalendarVisible] = useState(false);
+  const [autoGenerateContent, setAutoGenerateContent] = useState(false);
+  const [] = useState(false);
   
-  // 技能开启状态
-  const [enableDailyCreation, setEnableDailyCreation] = useState(true);
+  // 选题偏好状态
+  const [enableHotTopics, setEnableHotTopics] = useState(true); 
+  const [enableNewProducts, setEnableNewProducts] = useState(true);
+  const [enableNewActivities, setEnableNewActivities] = useState(false);
+  const [dynamicTopicStrategy, setDynamicTopicStrategy] = useState<'additional' | 'replace'>('additional');
+  
+  // 静态选题设置
+  const [enableRegularPromotion, setEnableRegularPromotion] = useState(true);
+  const [enableProductPromotion, setEnableProductPromotion] = useState(true);
+  const [topicDistribution, setTopicDistribution] = useState({
+    regularPromotion: 60,
+    productPromotion: 40,
+  });
+  
+  // 创作技能相关状态
+  const [selectedSkill, setSelectedSkill] = useState<string | null>('daily');
+  const [enableDailyCreation, setEnableDailyCreation] = useState(false);
   const [enableHotTopicCreation, setEnableHotTopicCreation] = useState(false);
-  const [enableAssistCreation, setEnableAssistCreation] = useState(false);
-  const [enableNewProductCreation, setEnableNewProductCreation] = useState(true); // 新增：商品上新创作技能状态
+  const [] = useState(false);
+  const [enableAssistCreation, setEnableAssistCreation] = useState(true); // 默认开启辅助创作
   
-  // 热点策略配置
+  // 热点相关度配置
+  const [hotTopicRelevance, setHotTopicRelevance] = useState<number>(70);
   const [hotTopicStrategy, setHotTopicStrategy] = useState<PublishStrategy>({
     mode: 'additional',
-    priorities: ['时事热点', '行业趋势', '节日活动', '用户调研', '产品评测']
+    priorities: ['热点创作', '热文改写', '日常内容']
   });
-
-  // 热文改写功能相关状态
-  const [] = useState<string>('weekly');
-  const [] = useState<PublishStrategy>({
+  
+  // 热文改写配置
+  const [rewriteFrequency, setRewriteFrequency] = useState<string>('weekly');
+  
+  const [newProductStrategy, setNewProductStrategy] = useState<PublishStrategy>({
     mode: 'additional',
     priorities: ['热文改写', '热点创作', '日常内容']
   });
   
-  // 个性化配置
-  const [] = useState<'additional' | 'replace'>('additional');
-  const [] = useState(true);
-  const [] = useState(true);
-  const [] = useState<{
-    regularPromotion: number;
-    productPromotion: number;
-  }>({
-    regularPromotion: 60,
-    productPromotion: 40
-  });
-  const [] = useState(70);
-  
-  // 当前选中的技能
-  const [selectedSkill, setSelectedSkill] = useState('daily');
+  // 审批提前通知时间
+  const [notifyDaysBeforePublish, setNotifyDaysBeforePublish] = useState<number>(3);
+  const [publishQuantity, setPublishQuantity] = useState<string>('daily');
+  const [] = useState<string[]>(['10:00', '20:00']);
+
+  const [showSkillConfig, setShowSkillConfig] = useState(false);
+
+  const [imageSelectMode, setImageSelectMode] = useState<'auto' | 'manual'>('auto');
+  const [mountType, setMountType] = useState<'none' | 'product' | 'poi'>('none');
+
+  const [contentStyle, setContentStyle] = useState<string>('轻松随意');
+  const [customStyle, setCustomStyle] = useState<string>('');
+
+  // 热点话题状态
+  const [hotTopicDateFilter, setHotTopicDateFilter] = useState<string>('today');
+  const [showHotTopicModal, setShowHotTopicModal] = useState<boolean>(false);
+  const [expandedTopics, setExpandedTopics] = useState<string[]>([]);
+
+  // 在状态声明区域添加热文改写比例状态
+  const [contentRatio, setContentRatio] = useState<number>(30);
+
+  const [imageMaterials] = useState<ImageMaterial[]>([
+    {
+      id: '1',
+      url: 'https://picsum.photos/400/400?random=1',
+      createTime: '2024-03-20 10:00:00',
+      tags: ['产品图', '实拍'],
+      usagePlan: {
+        date: '2024-03-25',
+        title: '春季新品开箱',
+        contentType: '产品介绍'
+      }
+    },
+    {
+      id: '2',
+      url: 'https://picsum.photos/400/400?random=2',
+      createTime: '2024-03-19 15:30:00',
+      tags: ['场景图', '生活'],
+      usagePlan: {
+        date: '2024-03-26',
+        title: '日常穿搭分享',
+        contentType: '生活记录'
+      }
+    },
+    {
+      id: '3',
+      url: 'https://picsum.photos/400/400?random=3',
+      createTime: '2024-03-18 09:15:00',
+      tags: ['细节图', '产品'],
+      usagePlan: {
+        date: '2024-03-27',
+        title: '产品细节展示',
+        contentType: '产品介绍'
+      }
+    }
+  ]);
+  const [showImagePreview, setShowImagePreview] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<ImageMaterial | null>(null);
+
+  // 获取当前账号信息
+  const currentAccount = mockAccounts.find(acc => acc.id === id);
+
+  // 如果没有找到账号，返回账号概览页面
+  React.useEffect(() => {
+    if (!currentAccount) {
+      navigate('/accounts');
+    }
+  }, [currentAccount, navigate]);
 
   // 在组件useEffect部分添加默认选择第一个计划的逻辑
   useEffect(() => {
@@ -135,7 +428,6 @@ const PublishPlan: React.FC<PublishPlanProps> = ({
     setSingleNoteDrawerVisible(false);
     singleNoteForm.resetFields();
     setSelectedImages([]);
-    setContentTypeValue(''); // 重置内容诉求 state
   };
 
   const handleSingleNoteSubmit = async () => {
@@ -316,6 +608,107 @@ const PublishPlan: React.FC<PublishPlanProps> = ({
     ) : null;
   };
 
+  // 模拟的对话历史
+  const dialogHistory = [
+    {
+      id: '1',
+      type: 'user',
+      content: '帮我把上周发的那篇"春日穿搭分享"再发一遍，但是要换个角度写',
+      time: '2024-03-18 10:30'
+    },
+    {
+      id: '2',
+      type: 'assistant',
+      content: `好的，我来帮你处理这个需求。让我先查看一下上周的内容...
+
+分析结果：
+1. 找到原文：《春日穿搭分享》，发布于 3月15日
+2. 核心要点：日常通勤穿搭、舒适度、时尚感
+3. 互动数据：获得2451次浏览，167个赞
+
+我的建议是从以下几个新角度改写：
+1. 将视角从"搭配展示"转变为"购物清单"
+2. 加入具体场景（如约会、面试）的搭配建议
+3. 结合最近的天气变化，增加应季性
+
+我已经开始生成新的内容，预计2分钟内完成。
+你觉得这个方向可以吗？`,
+      time: '2024-03-18 10:31',
+      status: 'thinking'
+    },
+    {
+      id: '3',
+      type: 'user',
+      content: '最近降温了，帮我蹭一下这个热点，写几篇内容',
+      time: '2024-03-18 11:00'
+    },
+    {
+      id: '4',
+      type: 'assistant',
+      content: `正在分析降温话题的相关数据...
+
+发现以下热点机会：
+1. "倒春寒"话题阅读量：890万
+2. 相关关键词：保暖穿搭、养生茶饮、防感冒
+
+建议创建以下内容：
+1. 《紧急预警！降温10℃怎么穿？这些单品让你温暖又时髦》
+   - 重点：保暖单品推荐、叠穿技巧
+   - 预期互动：4.2%
+
+2. 《降温必备！5款养生茶饮在家也能轻松做》
+   - 重点：简单配方、养生知识
+   - 预期互动：3.8%
+
+3. 《春捂秋冻不是闹着玩！医生推荐的防感冒小妙招》
+   - 重点：实用建议、专业性
+   - 预期互动：3.5%
+
+是否需要我开始生成这些内容？`,
+      time: '2024-03-18 11:01',
+      status: 'analyzing'
+    },
+    {
+      id: '5',
+      type: 'user',
+      content: '我们最近上了春季新品，帮我写几篇推广内容',
+      time: '2024-03-18 11:30'
+    },
+    {
+      id: '6',
+      type: 'assistant',
+      content: `让我查看一下最近的新品信息...
+
+已找到春季新品系列：
+- 连衣裙系列（3款）
+- 小众设计包包（2款）
+- 配饰系列（5款）
+
+分析建议：
+1. 内容节奏：
+   - 第1-2天：概览类内容，引发关注
+   - 第3-5天：单品深度测评
+   - 第6-7天：搭配案例分享
+
+具体方案：
+1. 《春日新品首发！这些单品让你美得不撞款》
+   - 重点：新品全系列概览
+   - 发布时间：今天下午 2点
+
+2. 《测评｜新款小众包包的5个惊喜细节》
+   - 重点：包包细节展示、使用场景
+   - 发布时间：明天上午 10点
+
+3. 《这条连衣裙=3种风格！春日穿搭速成攻略》
+   - 重点：单品多场景搭配
+   - 发布时间：后天下午 3点
+
+我已经开始准备第一篇内容，需要我先给你看看吗？`,
+      time: '2024-03-18 11:31',
+      status: 'working'
+    }
+  ];
+
   // 添加handleEditNote函数
   const handleEditNote = (note: Note) => {
     setEditingNote(note);
@@ -361,27 +754,27 @@ const PublishPlan: React.FC<PublishPlanProps> = ({
         ]
       },
       {
-        id: 'newProduct', // 修改 ID
-        name: '商品上新创作', // 修改名称
-        description: '当有新商品上架时，自动创作推广内容', // 修改描述
-        enabled: enableNewProductCreation, // 使用新状态
-        setEnabled: setEnableNewProductCreation, // 使用新状态设置函数
-        icon: <FireOutlined />, // 修改图标
-        color: '#fa8c16', // 修改颜色 (例如，橙色)
-        content: [ // 更新示例内容
+        id: 'interactive',
+        name: '互动玩法创作',
+        description: '通过抽奖/免费送吸引用户助力推广',
+        enabled: true,
+        setEnabled: () => {},
+        icon: <ShareAltOutlined />,
+        color: '#eb2f96',
+        content: [
           {
-            id: 'newProduct-1',
-            title: '新品上市：智能降噪耳机',
-            content: '全新智能降噪耳机震撼上市！沉浸式音乐体验，告别噪音干扰...',
-            imageUrl: 'https://picsum.photos/400/400?random=501',
-            scheduledTime: dayjs().add(1, 'day').format('YYYY-MM-DD HH:mm')
+            id: 'interactive-1',
+            title: '夏日新品福利社',
+            content: '抽三位幸运粉丝送新品试用装，评论区留下你最想要的单品...',
+            imageUrl: 'https://picsum.photos/400/400?random=401',
+            scheduledTime: dayjs().add(2, 'day').format('YYYY-MM-DD HH:mm')
           },
           {
-            id: 'newProduct-2',
-            title: '春季新款：设计师联名连衣裙',
-            content: '探索春日浪漫，设计师联名款连衣裙优雅登场，限时优惠进行中...',
-            imageUrl: 'https://picsum.photos/400/400?random=502',
-            scheduledTime: dayjs().add(3, 'day').format('YYYY-MM-DD HH:mm')
+            id: 'interactive-2',
+            title: '晒单赢好礼活动',
+            content: '晒出你的使用心得，抽5名精选评论送限定周边礼盒...',
+            imageUrl: 'https://picsum.photos/400/400?random=402',
+            scheduledTime: dayjs().add(5, 'day').format('YYYY-MM-DD HH:mm')
           }
         ]
       },
@@ -413,13 +806,12 @@ const PublishPlan: React.FC<PublishPlanProps> = ({
         {/* 左侧技能列表 */}
         <div style={{ 
           width: '260px', 
-          backgroundColor: '#fff', 
+          backgroundColor: '#f7f7f7', 
           padding: '16px',
           borderRadius: '8px',
           height: 'calc(100vh - 200px)',
           overflow: 'auto',
-          flexShrink: 0,
-          boxShadow: '0 1px 4px rgba(0, 0, 0, 0.05)'
+          flexShrink: 0
         }}>
           <div style={{ 
             fontWeight: 'bold', 
@@ -437,10 +829,10 @@ const PublishPlan: React.FC<PublishPlanProps> = ({
               style={{ 
                 padding: '12px 16px',
                 marginBottom: '12px',
-                backgroundColor: selectedSkill === skill.id ? '#f7f7f7' : 'transparent',
+                backgroundColor: selectedSkill === skill.id ? '#fff' : 'transparent',
                 borderRadius: '8px',
                 cursor: 'pointer',
-                border: selectedSkill === skill.id ? '1px solid #f0f0f0' : '1px solid transparent',
+                border: selectedSkill === skill.id ? '1px solid #ffffff' : '1px solid transparent',
                 boxShadow: selectedSkill === skill.id ? '0 2px 8px rgba(0, 0, 0, 0.05)' : 'none',
                 transition: 'all 0.3s'
               }}
@@ -479,15 +871,7 @@ const PublishPlan: React.FC<PublishPlanProps> = ({
         </div>
 
         {/* 右侧内容区域 */}
-        <div style={{ 
-          flex: 1, 
-          overflow: 'auto', 
-          maxWidth: 'calc(100vw - 250px)', 
-          backgroundColor: '#fff', 
-          borderRadius: '8px',
-          padding: '16px',
-          boxShadow: '0 1px 4px rgba(0, 0, 0, 0.05)'
-        }}>
+        <div style={{ flex: 1, overflow: 'auto', maxWidth: 'calc(100vw - 250px)' }}>
           {/* 辅助创作技能 */}
           {currentSkill.id === 'assist' && (
             <>
@@ -557,8 +941,8 @@ const PublishPlan: React.FC<PublishPlanProps> = ({
             </>
           )}
           
-          {/* 商品上新创作技能 */}
-          {currentSkill.id === 'newProduct' && ( // 修改 ID 判断
+          {/* 互动玩法创作技能 */}
+          {currentSkill.id === 'interactive' && (
             <>
               <div style={{ 
                 display: 'flex', 
@@ -585,8 +969,69 @@ const PublishPlan: React.FC<PublishPlanProps> = ({
                   </span>
                   {currentSkill.name}
                 </div>
-                {/* 移除按钮区域 */}
-                {/* <Space>...</Space> */}
+                <Space>
+                  <Button type="primary" icon={<PlusOutlined />} onClick={() => {
+                    Modal.confirm({
+                      title: '创建互动笔记',
+                      width: 700,
+                      content: (
+                        <Form layout="vertical" style={{ marginTop: '20px' }}>
+                          <Row gutter={16}>
+                            <Col span={24}>
+                              <Form.Item label="互动类型" required>
+                                <Radio.Group defaultValue="lottery">
+                                  <Radio.Button value="lottery">抽奖互动</Radio.Button>
+                                  <Radio.Button value="giveaway">免费送</Radio.Button>
+                                  <Radio.Button value="challenge">用户挑战</Radio.Button>
+                                </Radio.Group>
+                              </Form.Item>
+                            </Col>
+                            <Col span={24}>
+                              <Form.Item label="互动标题" required>
+                                <Input placeholder="例如：夏日新品抽奖福利" />
+                              </Form.Item>
+                            </Col>
+                            <Col span={24}>
+                              <Form.Item label="互动规则" required>
+                                <Input.TextArea 
+                                  rows={4} 
+                                  placeholder="详细描述互动规则，例如：1.关注点赞评论 2.评论区留言参与抽奖 3.将在7日后抽取3名幸运用户..." 
+                                />
+                              </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                              <Form.Item label="互动时间" required>
+                                <DatePicker style={{ width: '100%' }} />
+                              </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                              <Form.Item label="互动平台" required>
+                                <Select mode="multiple" defaultValue={['xiaohongshu']}>
+                                  <Select.Option value="xiaohongshu">小红书</Select.Option>
+                                  <Select.Option value="weibo">微博</Select.Option>
+                                  <Select.Option value="wechat">微信</Select.Option>
+                                </Select>
+                              </Form.Item>
+                            </Col>
+                            <Col span={24}>
+                              <Form.Item label="奖品设置" required>
+                                <Input.TextArea 
+                                  rows={3} 
+                                  placeholder="详细描述奖品内容，例如：一等奖（1名）：全套产品礼盒；二等奖（3名）：新品体验装..." 
+                                />
+                              </Form.Item>
+                            </Col>
+                          </Row>
+                        </Form>
+                      ),
+                      onOk() {
+                        message.success('互动笔记创建成功！');
+                      }
+                    });
+                  }}>
+                    互动笔记创作
+                  </Button>
+                </Space>
               </div>
               
               <div style={{ 
@@ -602,12 +1047,12 @@ const PublishPlan: React.FC<PublishPlanProps> = ({
                     cover={note.imageUrl ? <img alt={note.title} src={note.imageUrl} style={{ height: '140px', objectFit: 'cover' }} /> : null}
                     actions={[
                       <EditOutlined key="edit" onClick={() => handleEditNote(note)} />,
-                      <DeleteOutlined key="delete" onClick={() => handleDeleteNote(note.id)} />
-                      // 移除分享按钮
+                      <DeleteOutlined key="delete" onClick={() => handleDeleteNote(note.id)} />,
+                      <ShareAltOutlined key="share" />
                     ]}
                     size="small"
                   >
-                    {/* 移除互动笔记标签 */}
+                    <Tag color="#eb2f96" style={{ marginBottom: '8px' }}>互动笔记</Tag>
                     <Card.Meta
                       title={<div style={{ fontSize: '0.95em' }}>{note.title}</div>}
                       description={
@@ -626,7 +1071,7 @@ const PublishPlan: React.FC<PublishPlanProps> = ({
           )}
           
           {/* 非辅助创作技能且未开启时显示配置界面 */}
-          {currentSkill.id !== 'assist' && currentSkill.id !== 'newProduct' && !currentSkill.enabled ? ( // 修改 ID 判断
+          {currentSkill.id !== 'assist' && currentSkill.id !== 'interactive' && !currentSkill.enabled ? (
             <Card 
               title={
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -766,7 +1211,6 @@ const PublishPlan: React.FC<PublishPlanProps> = ({
                                 <Radio value="轻松随意">轻松随意</Radio>
                                 <Radio value="专业正式">专业正式</Radio>
                                 <Radio value="感性文艺">感性文艺</Radio>
-                                <Radio value="幽默诙谐">幽默诙谐</Radio>
                                 <Radio value="custom">自定义风格</Radio>
                               </Space>
                             </Radio.Group>
@@ -785,6 +1229,75 @@ const PublishPlan: React.FC<PublishPlanProps> = ({
                                 </div>
                               </div>
                             )}
+                          </div>
+                        </div>
+                      </Card>
+
+                      <Card style={{ marginBottom: '16px' }} title="热文改写配置">
+                        <div style={{ padding: '0' }}>
+                          <div style={{ marginBottom: '16px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                              <div>
+                                <div style={{ fontWeight: 'bold', marginBottom: '4px', fontSize: '14px' }}>原创与参考热文比例</div>
+                                <div style={{ fontSize: '12px', color: '#666' }}>
+                                  建议参考热文比例保持在30%左右，过高可能影响账号内容的原创性
+                                </div>
+                              </div>
+                              <Tooltip title="原创内容与参考热文的比例配置，影响内容托管系统生成内容的方式">
+                                <InfoCircleOutlined style={{ color: '#1890ff' }} />
+                              </Tooltip>
+                            </div>
+                            
+                            <Row align="middle" gutter={16} style={{ marginBottom: '8px' }}>
+                              <Col span={18}>
+                                <Slider
+                                  value={contentRatio}
+                                  onChange={setContentRatio}
+                                  tooltip={{ formatter: (value) => `${value}%` }}
+                                  marks={{
+                                    0: '0%',
+                                    30: { style: { color: '#1890ff' }, label: '30%（推荐）' },
+                                    50: '50%',
+                                    100: '100%'
+                                  }}
+                                />
+                              </Col>
+                              <Col span={6}>
+                                <InputNumber 
+                                  min={0}
+                                  max={100}
+                                  value={contentRatio}
+                                  onChange={(value) => setContentRatio(value as number)}
+                                  formatter={(value) => `${value}%`}
+                                  parser={(value) => Number(value!.replace('%', ''))}
+                                  style={{ width: '100%' }}
+                                />
+                              </Col>
+                            </Row>
+                            
+                            <Card size="small" style={{ backgroundColor: '#f9f9f9' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <div>
+                                  <div style={{ color: '#1890ff', fontWeight: 'bold' }}>原创内容</div>
+                                  <div>{100 - contentRatio}%</div>
+                                </div>
+                                <div>
+                                  <div style={{ color: '#ff4d4f', fontWeight: 'bold' }}>参考热文</div>
+                                  <div>{contentRatio}%</div>
+                                </div>
+                              </div>
+                            </Card>
+                            
+                            <div style={{ marginTop: '16px' }}>
+                              <Button 
+                                type="link" 
+                                icon={<FireOutlined style={{ color: '#ff4d4f' }} />}
+                                style={{ padding: 0 }}
+                                onClick={() => message.info('跳转到内容管理-参考热文页面')}
+                              >
+                                去管理参考热文和对标账号
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       </Card>
@@ -1032,32 +1545,10 @@ const PublishPlan: React.FC<PublishPlanProps> = ({
                       <p>提升内容的时效性和曝光率，让您的账号更具影响力。</p>
                     </>
                   )}
-                  {/* 商品上新创作技能的未开启描述 */}
                   {currentSkill.id === 'newProduct' && (
                     <>
-                      <p>当您在后台添加新商品时，AI会自动识别并创作推广这些新品的内容。</p>
+                      <p>当您添加新商品时，AI会自动识别并创作推广这些新品的内容。</p>
                       <p>无需人工干预，让新品自动获得曝光和销售机会。</p>
-                      <br/>
-                      <Card title="配置选项 (示例)">
-                        <Form layout="vertical">
-                          <Form.Item label="触发创作的商品分类">
-                            <Select mode="multiple" placeholder="选择需要自动创作的商品分类" defaultValue={['服装', '美妆']}>
-                              <Select.Option value="服装">服装</Select.Option>
-                              <Select.Option value="美妆">美妆</Select.Option>
-                              <Select.Option value="家居">家居</Select.Option>
-                              <Select.Option value="配饰">配饰</Select.Option>
-                              <Select.Option value="食品">食品</Select.Option>
-                            </Select>
-                          </Form.Item>
-                          <Form.Item label="内容生成风格">
-                            <Radio.Group defaultValue="auto">
-                                <Radio value="auto">根据商品自动判断</Radio>
-                                <Radio value="style1">风格1 (活泼有趣)</Radio>
-                                <Radio value="style2">风格2 (专业评测)</Radio>
-                              </Radio.Group>
-                          </Form.Item>
-                        </Form>
-                      </Card>
                     </>
                   )}
                 </div>
@@ -1114,9 +1605,71 @@ const PublishPlan: React.FC<PublishPlanProps> = ({
                     </div>
                   )}
                   
-                  {/* {currentSkill.id === 'newProduct' && ( */}
-                  {/* // 移除原热文改写技能的配置，商品上新技能不需要这个 */}
-                  {/* )} */}
+                  {currentSkill.id === 'newProduct' && (
+                    <div style={{ marginBottom: '24px', width: '100%' }}>
+                      <Card title="改写频率配置">
+                        <Select 
+                          value={rewriteFrequency} 
+                          onChange={(value) => setRewriteFrequency(value)}
+                          style={{ width: 300 }}
+                        >
+                          <Select.Option value="daily">每日改写 (每天1篇内容)</Select.Option>
+                          <Select.Option value="weekly">每周改写 (每周3篇内容)</Select.Option>
+                          <Select.Option value="biweekly">双周改写 (每两周5篇内容)</Select.Option>
+                        </Select>
+                        <div style={{ marginTop: '12px', color: '#666', fontSize: '13px' }}>
+                          设置系统自动查找热门文章并改写的频率，频率越高，获取的素材越多
+                        </div>
+                      </Card>
+
+                      <Card title="发布策略" style={{ marginTop: '16px' }}>
+                        <div style={{ marginBottom: '16px' }}>
+                          <div style={{ marginBottom: '8px', fontWeight: 'bold' }}>当有热文可改写时：</div>
+                          <Radio.Group 
+                            value={newProductStrategy.mode}
+                            onChange={(e: RadioChangeEvent) => setNewProductStrategy({
+                              ...newProductStrategy,
+                              mode: e.target.value as 'additional' | 'replace'
+                            })}
+                          >
+                            <Space direction="vertical">
+                              <Radio value="additional">额外发布一篇内容</Radio>
+                              <Radio value="replace">替换已计划的内容（根据优先级）</Radio>
+                            </Space>
+                          </Radio.Group>
+                        </div>
+
+                        <div>
+                          <div style={{ marginBottom: '8px', fontWeight: 'bold' }}>内容优先级排序：</div>
+                          <div style={{ color: '#666', fontSize: '12px', marginBottom: '12px' }}>
+                            拖动调整顺序，优先级从高到低
+                          </div>
+                          <div style={{ 
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '8px'
+                          }}>
+                            {newProductStrategy.priorities.map((item, index) => (
+                              <div
+                                key={item}
+                                style={{
+                                  padding: '8px 16px',
+                                  backgroundColor: '#f5f5f5',
+                                  borderRadius: '4px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  cursor: 'move'
+                                }}
+                              >
+                                <div style={{ marginRight: '8px', color: '#999' }}>{index + 1}</div>
+                                {item}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </Card>
+                    </div>
+                  )}
                 </div>
                 
                 <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -1133,8 +1686,8 @@ const PublishPlan: React.FC<PublishPlanProps> = ({
                 </div>
               </div>
             </Card>
-          ) : currentSkill.id !== 'assist' && currentSkill.id !== 'newProduct' ? ( // 修改 ID 判断
-            // 非辅助创作、非商品上新技能且已开启时显示内容列表
+          ) : currentSkill.id !== 'assist' && currentSkill.id !== 'interactive' ? (
+            // 非辅助创作技能且已开启时显示内容列表
             <>
               <div style={{ 
                 display: 'flex', 
@@ -1206,9 +1759,176 @@ const PublishPlan: React.FC<PublishPlanProps> = ({
               )}
 
               {/* 热文改写技能内容区域 */}
-              {/* {currentSkill.id === 'newProduct' && ( */}
-                {/* // 移除原热文改写相关逻辑 */}
-              {/* )} */}
+              {currentSkill.id === 'newProduct' && (
+                <Tabs 
+                  defaultActiveKey="hotArticles" 
+                  items={[
+                    {
+                      key: 'hotArticles',
+                      label: '热文管理',
+                      children: (
+                        <div>
+                          <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
+                              已为你挖掘到31篇可借鉴的行业范文
+                            </div>
+                            <Button 
+                              type="primary" 
+                              icon={<PlusOutlined />}
+                              onClick={() => {
+                                Modal.confirm({
+                                  title: '添加范文链接',
+                                  content: (
+                                    <Input.TextArea 
+                                      placeholder="请输入范文链接，支持小红书、抖音、微博等平台" 
+                                      rows={4}
+                                      style={{ marginTop: '12px' }}
+                                    />
+                                  ),
+                                  onOk() {
+                                    message.success('范文链接添加成功，AI将基于此进行改写');
+                                  }
+                                });
+                              }}
+                            >
+                              添加范文
+                            </Button>
+                          </div>
+                          
+                          <List
+                            dataSource={mockHotTopics}
+                            renderItem={item => (
+                              <List.Item
+                                style={{ 
+                                  padding: '16px',
+                                  borderRadius: '8px',
+                                  border: '1px solid #f0f0f0',
+                                  marginBottom: '12px',
+                                  background: item.created ? '#FAFAFA' : 'white'
+                                }}
+                                actions={[
+                                  <Button 
+                                    key="rewrite" 
+                                    type="primary" 
+                                    disabled={item.created}
+                                    icon={<RetweetOutlined />}
+                                  >
+                                    {item.created ? '已改写' : '开始改写'}
+                                  </Button>
+                                ]}
+                              >
+                                <div style={{ width: '100%' }}>
+                                  <div style={{ 
+                                    fontWeight: 'bold', 
+                                    fontSize: '15px',
+                                    marginBottom: '8px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px'
+                                  }}>
+                                    {item.title}
+                                    {item.created && <Tag color="green">已改写</Tag>}
+                                  </div>
+                                  <Space size={16} style={{ marginBottom: '8px' }}>
+                                    <span>
+                                      <EyeOutlined style={{ marginRight: '4px' }} />
+                                      {(item.views / 10000).toFixed(1)}万热度
+                                    </span>
+                                    <span>
+                                      来源：小红书
+                                    </span>
+                                    <span>
+                                      发布时间：{dayjs().subtract(Math.floor(Math.random() * 7), 'day').format('YYYY-MM-DD')}
+                                    </span>
+                                  </Space>
+                                  
+                                  <div style={{ 
+                                    fontSize: '13px',
+                                    color: '#666',
+                                    background: '#f9f9f9',
+                                    padding: '8px 12px',
+                                    borderRadius: '4px',
+                                    marginTop: '8px'
+                                  }}>
+                                    {item.details.substring(0, 120)}...
+                                  </div>
+                                </div>
+                              </List.Item>
+                            )}
+                            pagination={{
+                              onChange: page => {
+                                console.log(page);
+                              },
+                              pageSize: 5,
+                            }}
+                          />
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'createdContent',
+                      label: '创作内容',
+                      children: (
+                        <div style={{ 
+                          display: 'grid', 
+                          gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', 
+                          gap: '16px',
+                          marginBottom: '16px'
+                        }}>
+                          {/* 模拟两篇热文改写创作的内容 */}
+                          <Card 
+                            hoverable
+                            style={{ height: '100%', fontSize: '0.9em' }}
+                            cover={<img alt="改写内容1" src="https://picsum.photos/400/400?random=120" style={{ height: '140px', objectFit: 'cover' }} />}
+                            actions={[
+                              <EditOutlined key="edit" />,
+                              <DeleteOutlined key="delete" />,
+                              <ShareAltOutlined key="share" />
+                            ]}
+                            size="small"
+                          >
+                            <Card.Meta
+                              title={<div style={{ fontSize: '0.95em' }}>改写：10分钟掌握多肉植物养护秘诀</div>}
+                              description={
+                                <Typography.Paragraph ellipsis={{ rows: 2 }} style={{ fontSize: '0.85em' }}>
+                                  多肉植物怎么养？教你几招，让你的多肉植物长得圆润饱满，叶片颜色艳丽...
+                                </Typography.Paragraph>
+                              }
+                            />
+                            <div style={{ marginTop: '8px', fontSize: '11px', color: '#999' }}>
+                              计划发布时间: {dayjs().add(2, 'day').format('YYYY-MM-DD HH:mm')}
+                            </div>
+                          </Card>
+
+                          <Card 
+                            hoverable
+                            style={{ height: '100%', fontSize: '0.9em' }}
+                            cover={<img alt="改写内容2" src="https://picsum.photos/400/400?random=121" style={{ height: '140px', objectFit: 'cover' }} />}
+                            actions={[
+                              <EditOutlined key="edit" />,
+                              <DeleteOutlined key="delete" />,
+                              <ShareAltOutlined key="share" />
+                            ]}
+                            size="small"
+                          >
+                            <Card.Meta
+                              title={<div style={{ fontSize: '0.95em' }}>改写：春季穿搭必备单品推荐</div>}
+                              description={
+                                <Typography.Paragraph ellipsis={{ rows: 2 }} style={{ fontSize: '0.85em' }}>
+                                  春季穿搭有哪些必备单品？这几款百搭又时尚的单品让你轻松应对多变的春季天气...
+                                </Typography.Paragraph>
+                              }
+                            />
+                            <div style={{ marginTop: '8px', fontSize: '11px', color: '#999' }}>
+                              计划发布时间: {dayjs().add(4, 'day').format('YYYY-MM-DD HH:mm')}
+                            </div>
+                          </Card>
+                        </div>
+                      ),
+                    },
+                  ]}
+                />
+              )}
 
               {/* 热点详情弹窗 */}
               <Modal
@@ -1314,7 +2034,7 @@ const PublishPlan: React.FC<PublishPlanProps> = ({
               </Modal>
 
               {/* 图片素材预览模块 */}
-              {false && (
+              {currentSkill.id === 'daily' && currentSkill.enabled && (
                 <div style={{ 
                   marginBottom: '24px',
                   padding: '8px 12px',
@@ -1531,6 +2251,75 @@ const PublishPlan: React.FC<PublishPlanProps> = ({
                               </div>
                             </div>
                           )}
+                        </div>
+                      </div>
+                    </Card>
+
+                    <Card style={{ marginBottom: '16px' }} title="热文改写配置">
+                      <div style={{ padding: '0' }}>
+                        <div style={{ marginBottom: '16px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                            <div>
+                              <div style={{ fontWeight: 'bold', marginBottom: '4px', fontSize: '14px' }}>原创与参考热文比例</div>
+                              <div style={{ fontSize: '12px', color: '#666' }}>
+                                建议参考热文比例保持在30%左右，过高可能影响账号内容的原创性
+                              </div>
+                            </div>
+                            <Tooltip title="原创内容与参考热文的比例配置，影响内容托管系统生成内容的方式">
+                              <InfoCircleOutlined style={{ color: '#1890ff' }} />
+                            </Tooltip>
+                          </div>
+                          
+                          <Row align="middle" gutter={16} style={{ marginBottom: '8px' }}>
+                            <Col span={18}>
+                              <Slider
+                                value={contentRatio}
+                                onChange={setContentRatio}
+                                tooltip={{ formatter: (value) => `${value}%` }}
+                                marks={{
+                                  0: '0%',
+                                  30: { style: { color: '#1890ff' }, label: '30%（推荐）' },
+                                  50: '50%',
+                                  100: '100%'
+                                }}
+                              />
+                            </Col>
+                            <Col span={6}>
+                              <InputNumber 
+                                min={0}
+                                max={100}
+                                value={contentRatio}
+                                onChange={(value) => setContentRatio(value as number)}
+                                formatter={(value) => `${value}%`}
+                                parser={(value) => Number(value!.replace('%', ''))}
+                                style={{ width: '100%' }}
+                              />
+                            </Col>
+                          </Row>
+                          
+                          <Card size="small" style={{ backgroundColor: '#f9f9f9' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                              <div>
+                                <div style={{ color: '#1890ff', fontWeight: 'bold' }}>原创内容</div>
+                                <div>{100 - contentRatio}%</div>
+                              </div>
+                              <div>
+                                <div style={{ color: '#ff4d4f', fontWeight: 'bold' }}>参考热文</div>
+                                <div>{contentRatio}%</div>
+                              </div>
+                            </div>
+                          </Card>
+                          
+                          <div style={{ marginTop: '16px' }}>
+                            <Button 
+                              type="link" 
+                              icon={<FireOutlined style={{ color: '#ff4d4f' }} />}
+                              style={{ padding: 0 }}
+                              onClick={() => message.info('跳转到内容管理-参考热文页面')}
+                            >
+                              去管理参考热文和对标账号
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </Card>
@@ -1822,222 +2611,46 @@ const PublishPlan: React.FC<PublishPlanProps> = ({
                     </Card>
                   </div>
                 )}
-                {/* 商品上新技能配置抽屉内容 */}
                 {currentSkill.id === 'newProduct' && (
                   <div style={{ marginBottom: '24px', width: '100%' }}>
-                    <p>当您在后台添加新商品时，AI会自动识别并创作推广这些新品的内容。</p>
-                    <br/>
-                    <Card title="触发条件与规则">
-                       <Form layout="vertical">
-                          <Form.Item label="触发创作的商品分类">
-                            <Select mode="multiple" placeholder="选择需要自动创作的商品分类" defaultValue={['服装', '美妆']}>
-                              <Select.Option value="服装">服装</Select.Option>
-                              <Select.Option value="美妆">美妆</Select.Option>
-                              <Select.Option value="家居">家居</Select.Option>
-                              <Select.Option value="配饰">配饰</Select.Option>
-                              <Select.Option value="食品">食品</Select.Option>
-                            </Select>
-                          </Form.Item>
-                          <Form.Item label="创作频率限制">
-                             <Select defaultValue="dailyMax1" style={{ width: '100%' }}>
-                                <Select.Option value="dailyMax1">每天最多为1个新品创作</Select.Option>
-                                <Select.Option value="dailyMax3">每天最多为3个新品创作</Select.Option>
-                                <Select.Option value="noLimit">不限制</Select.Option>
-                              </Select>
-                          </Form.Item>
-                       </Form>
-                    </Card>
-                    <br/>
-                    <Card title="内容生成配置">
-                       <Form layout="vertical">
-                         <Form.Item label="内容生成风格">
-                            <Radio.Group defaultValue="auto">
-                                <Radio value="auto">根据商品自动判断</Radio>
-                                <Radio value="style1">风格1 (活泼有趣)</Radio>
-                                <Radio value="style2">风格2 (专业评测)</Radio>
-                              </Radio.Group>
-                          </Form.Item>
-                          <Form.Item label="默认挂载商品">
-                             <Checkbox defaultChecked>自动挂载对应的新商品链接</Checkbox>
-                          </Form.Item>
-                       </Form>
-                    </Card>
-                    <br/>
-                    <Card title="内容审批">
-                      <Form layout="vertical">
-                        <Form.Item label="是否需要人工审批">
-                          <Radio.Group defaultValue="no">
-                            <Radio value="yes">需要审批</Radio>
-                            <Radio value="no">无需审批，自动发布</Radio>
-                          </Radio.Group>
-                        </Form.Item>
-                      </Form>
-                    </Card>
+                    {/* 保持原有的推广力度配置内容 */}
+                    // ... existing code ...
                   </div>
                 )}
               </Drawer>
               
               {/* 笔记列表 */}
-              {currentSkill.id === 'daily' ? (
-                        <>
-                          {/* 图片素材预览模块 - 移动到已创作内容tab下 */}
-                          <div style={{ 
-                            marginTop: '8px',
-                            marginBottom: '16px',
-                            padding: '8px 12px',
-                            backgroundColor: '#f7f7f7',
-                            borderRadius: '8px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '12px'
-                          }}>
-                            <div style={{ 
-                              display: 'flex', 
-                              alignItems: 'center', 
-                              gap: '8px',
-                              fontWeight: 'bold',
-                              fontSize: '14px',
-                              color: '#333',
-                              flexShrink: 0
-                            }}>
-                              <PictureOutlined />
-                              即将为你创作的内容素材
-                            </div>
-                            <div style={{ 
-                              display: 'flex', 
-                              gap: '8px',
-                              overflowX: 'auto',
-                              flex: 1
-                            }}>
-                              {imageMaterials.map(image => (
-                                <div
-                                  key={image.id}
-                                  style={{
-                                    width: '40px',
-                                    height: '40px',
-                                    borderRadius: '4px',
-                                    overflow: 'hidden',
-                                    cursor: 'pointer',
-                                    position: 'relative',
-                                    flexShrink: 0,
-                                    border: image.usagePlan ? '2px solid #1890ff' : 'none'
-                                  }}
-                                  onClick={() => {
-                                    setSelectedImage(image);
-                                    setShowImagePreview(true);
-                                  }}
-                                >
-                                  <img
-                                    src={image.url}
-                                    alt=""
-                                    style={{
-                                      width: '100%',
-                                      height: '100%',
-                                      objectFit: 'cover'
-                                    }}
-                                  />
-                                </div>
-                              ))}
-                            </div>
-                            <Button 
-                              type="link" 
-                              size="small" 
-                              onClick={() => {
-                                if (imageMaterials.length > 0) {
-                                  setSelectedImage(imageMaterials[0]);
-                                  setShowImagePreview(true);
-                                }
-                              }}
-                            >
-                              查看创作计划
-                            </Button>
-                          </div>
-                        
-                          <div style={{ 
-                            display: 'grid', 
-                            gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', 
-                            gap: '16px' 
-                          }}>
-                            {currentSkill.content.map(note => (
-                              <Card 
-                                key={note.id}
-                                hoverable
-                                style={{ height: '100%', fontSize: '0.9em' }}
-                                cover={note.imageUrl ? <img alt={note.title} src={note.imageUrl} style={{ height: '140px', objectFit: 'cover' }} /> : null}
-                                actions={[
-                                  <EditOutlined key="edit" onClick={() => handleEditNote(note)} />,
-                                  <DeleteOutlined key="delete" onClick={() => handleDeleteNote(note.id)} />
-                                ]}
-                                size="small"
-                              >
-                                <Card.Meta
-                                  title={<div style={{ fontSize: '0.95em' }}>{note.title}</div>}
-                                  description={
-                                    <Typography.Paragraph ellipsis={{ rows: 2 }} style={{ fontSize: '0.85em' }}>
-                                      {note.content}
-                                    </Typography.Paragraph>
-                                  }
-                                />
-                                {/* 添加热门笔记改写标签和来源信息，随机为部分笔记添加此信息 */}
-                                {note.id.includes('daily') && Math.random() > 0.5 && (
-                                  <div style={{ 
-                                    marginTop: '8px', 
-                                    fontSize: '11px', 
-                                    backgroundColor: '#FFF7E6', 
-                                    padding: '4px 6px',
-                                    borderRadius: '4px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '6px'
-                                  }}>
-                                    <Tag color="orange" style={{ margin: 0, fontSize: '10px', padding: '0 4px', lineHeight: '16px' }}>
-                                      热门笔记改写
-                                    </Tag>
-                                    <span style={{ color: '#666', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                      来源: {['「夏日穿搭分享」', '「生活好物推荐」', '「宝藏美食探店」'][Math.floor(Math.random() * 3)]}
-                                    </span>
-                                  </div>
-                                )}
-                                <div style={{ marginTop: '8px', fontSize: '11px', color: '#999' }}>
-                                  计划发布时间: {dayjs(note.scheduledTime).format('YYYY-MM-DD HH:mm')}
-                                </div>
-                              </Card>
-                            ))}
-                          </div>
-                        </>
-              ) : (
-                <div style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', 
-                  gap: '16px' 
-                }}>
-                  {currentSkill.content.map(note => (
-                    <Card 
-                      key={note.id}
-                      hoverable
-                      style={{ height: '100%', fontSize: '0.9em' }}
-                      cover={note.imageUrl ? <img alt={note.title} src={note.imageUrl} style={{ height: '140px', objectFit: 'cover' }} /> : null}
-                      actions={[
-                        <EditOutlined key="edit" onClick={() => handleEditNote(note)} />,
-                        <DeleteOutlined key="delete" onClick={() => handleDeleteNote(note.id)} />
-                      ]}
-                      size="small"
-                    >
-                      <Card.Meta
-                        title={<div style={{ fontSize: '0.95em' }}>{note.title}</div>}
-                        description={
-                          <Typography.Paragraph ellipsis={{ rows: 2 }} style={{ fontSize: '0.85em' }}>
-                            {note.content}
-                          </Typography.Paragraph>
-                        }
-                      />
-                      <div style={{ marginTop: '8px', fontSize: '11px', color: '#999' }}>
-                        计划发布时间: {dayjs(note.scheduledTime).format('YYYY-MM-DD HH:mm')}
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              )}
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', 
+                gap: '16px' 
+              }}>
+                {currentSkill.content.map(note => (
+                  <Card 
+                    key={note.id}
+                    hoverable
+                    style={{ height: '100%', fontSize: '0.9em' }}
+                    cover={note.imageUrl ? <img alt={note.title} src={note.imageUrl} style={{ height: '140px', objectFit: 'cover' }} /> : null}
+                    actions={[
+                      <EditOutlined key="edit" onClick={() => handleEditNote(note)} />,
+                      <DeleteOutlined key="delete" onClick={() => handleDeleteNote(note.id)} />
+                    ]}
+                    size="small"
+                  >
+                    <Card.Meta
+                      title={<div style={{ fontSize: '0.95em' }}>{note.title}</div>}
+                      description={
+                        <Typography.Paragraph ellipsis={{ rows: 2 }} style={{ fontSize: '0.85em' }}>
+                          {note.content}
+                        </Typography.Paragraph>
+                      }
+                    />
+                    <div style={{ marginTop: '8px', fontSize: '11px', color: '#999' }}>
+                      计划发布时间: {dayjs(note.scheduledTime).format('YYYY-MM-DD HH:mm')}
+                    </div>
+                  </Card>
+                ))}
+              </div>
             </>
           ) : null}
         </div>
@@ -2048,7 +2661,15 @@ const PublishPlan: React.FC<PublishPlanProps> = ({
 
   return (
     <div className="publish-plan-container">
-      <div style={{ marginBottom: '24px', marginTop: '24px' }}>
+      <div style={{ marginBottom: '24px' }}>
+        <Button 
+          type="link" 
+          icon={<LeftOutlined />} 
+          onClick={() => navigate('/accounts')}
+          style={{ padding: 0, marginBottom: '16px' }}
+        >
+          返回账号列表
+        </Button>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <Avatar size={64} src={currentAccount?.avatar} />
@@ -2064,6 +2685,19 @@ const PublishPlan: React.FC<PublishPlanProps> = ({
               </Space>
             </div>
           </div>
+          <Space>
+            <Badge count={showBadge ? 1 : 0} offset={[-5, 0]}>
+              <Button icon={<RobotOutlined />} onClick={() => {
+                setAiAssistantVisible(true);
+                setShowBadge(false);
+              }}>
+                唤起助手
+              </Button>
+            </Badge>
+            <Button icon={<CalendarOutlined />} onClick={() => setCalendarVisible(true)}>
+              查看日历
+            </Button>
+          </Space>
         </div>
       </div>
 
@@ -2094,7 +2728,26 @@ const PublishPlan: React.FC<PublishPlanProps> = ({
             key: 'settings',
             label: '个性化',
             children: (
-              <PersonalizationTab />
+              <PersonalizationTab
+                autoGenerateContent={autoGenerateContent}
+                setAutoGenerateContent={setAutoGenerateContent}
+                enableHotTopics={enableHotTopics}
+                setEnableHotTopics={setEnableHotTopics}
+                enableNewProducts={enableNewProducts}
+                setEnableNewProducts={setEnableNewProducts}
+                enableNewActivities={enableNewActivities}
+                setEnableNewActivities={setEnableNewActivities}
+                dynamicTopicStrategy={dynamicTopicStrategy}
+                setDynamicTopicStrategy={setDynamicTopicStrategy}
+                enableRegularPromotion={enableRegularPromotion}
+                setEnableRegularPromotion={setEnableRegularPromotion}
+                enableProductPromotion={enableProductPromotion}
+                setEnableProductPromotion={setEnableProductPromotion}
+                topicDistribution={topicDistribution}
+                setTopicDistribution={setTopicDistribution}
+                hotTopicRelevance={hotTopicRelevance}
+                setHotTopicRelevance={setHotTopicRelevance}
+              />
             )
           }
         ]}
@@ -2235,29 +2888,9 @@ const PublishPlan: React.FC<PublishPlanProps> = ({
                 <Radio value="casual">轻松随意</Radio>
                 <Radio value="professional">专业正式</Radio>
                 <Radio value="artistic">感性文艺</Radio>
-                <Radio value="custom">自定义</Radio>
+                <Radio value="humorous">幽默诙谐</Radio>
               </Space>
             </Radio.Group>
-          </Form.Item>
-          
-          {/* 添加自定义风格输入框 */}
-          <Form.Item
-            name="customStyleText"
-            noStyle
-            shouldUpdate={(prevValues: Record<string, any>, currentValues: Record<string, any>) => {
-              return prevValues.contentStyle !== currentValues.contentStyle;
-            }}
-          >
-            {({ getFieldValue }) =>
-              getFieldValue('contentStyle') === 'custom' ? (
-                <Form.Item
-                  name="customStyleDescription"
-                  label="自定义风格描述"
-                >
-                  <Input placeholder="请描述您想要的内容风格" />
-                </Form.Item>
-              ) : null
-            }
           </Form.Item>
 
           <Form.Item
@@ -2439,146 +3072,27 @@ const PublishPlan: React.FC<PublishPlanProps> = ({
             </Button>
           </Form.Item>
 
-          {/* 将快速开始按钮和内容诉求输入框合并到一个模块 */}
+          <Form.Item
+            name="platforms"
+            label="发布平台"
+            rules={[{ required: true, message: '请选择至少一个发布平台' }]}
+          >
+            <Select
+              mode="multiple"
+              placeholder="请选择发布平台"
+              options={[
+                { label: '小红书', value: 'xiaohongshu' },
+                { label: '微信', value: 'wechat' }
+              ]}
+            />
+          </Form.Item>
+
           <Form.Item
             name="contentType"
             label="内容诉求"
-            rules={[{ required: true, message: '请描述您的内容诉求' }]}
+            rules={[{ required: true, message: '请选择内容诉求' }]}
           >
-            {/* 使用相对定位容器包裹输入框和按钮栏 */}
-            <div style={{ position: 'relative' }}>
-              {/* 内容诉求输入框，设置为受控组件 */}
-              <Input.TextArea 
-                rows={6} 
-                placeholder="请详细描述您想创作的内容，AI将根据您的诉求生成笔记。"
-                style={{ paddingBottom: '38px' }} 
-                ref={contentTypeInputRef}
-                id="content-type-textarea" 
-                value={contentTypeValue} // 绑定 state 值
-                onChange={(e) => {
-                  const newValue = e.target.value;
-                  setContentTypeValue(newValue); // 更新 state
-                  singleNoteForm.setFieldsValue({ contentType: newValue }); // 同步更新 antd form
-                }}
-              />
-              {/* 快速开始按钮栏，绝对定位到底部 */}
-              <div style={{
-                position: 'absolute',
-                bottom: '1px', // 贴近边框
-                left: '1px',
-                right: '1px',
-                padding: '8px 11px', // 调整内边距
-                backgroundColor: '#f5f5f5', // 添加背景色
-                borderTop: '1px solid #d9d9d9', // 添加上边框
-                borderBottomLeftRadius: '6px', // 匹配输入框圆角
-                borderBottomRightRadius: '6px',
-                boxSizing: 'border-box',
-                display: 'flex',
-                flexWrap: 'nowrap',
-                overflowX: 'auto',
-                whiteSpace: 'nowrap'
-              }}>
-                <div style={{ 
-                  display: 'flex', 
-                  gap: '4px',
-                  fontSize: '12px',
-                  alignItems: 'center'
-                }}>
-                  <span style={{ color: '#999', marginRight: '4px' }}>模板:</span>
-                  <Tag 
-                    style={{ cursor: 'pointer', margin: '0 4px 0 0' }}
-                    onClick={() => {
-                      const newValue = '我想发起一个抽奖活动，奖品是[填写奖品]，时间是[填写时间]，参与方式是[填写方式，如点赞+评论]...';
-                      setContentTypeValue(newValue); // 更新 state
-                      singleNoteForm.setFieldsValue({ contentType: newValue }); // 更新 antd form
-                      // 延迟设置焦点
-                      setTimeout(() => {
-                        if (contentTypeInputRef.current?.focus) {
-                          contentTypeInputRef.current.focus();
-                        } else if (contentTypeInputRef.current?.resizableTextArea?.textArea?.focus) {
-                          contentTypeInputRef.current.resizableTextArea.textArea.focus();
-                        }
-                      }, 0);
-                    }}
-                    color="blue"
-                  >
-                    <HeartOutlined /> 抽奖
-                  </Tag>
-                  <Tag 
-                    style={{ cursor: 'pointer', margin: '0 4px 0 0' }}
-                    onClick={() => {
-                      const newValue = '招募[数量]名新品体验官，体验[填写产品名称]，要求[填写要求，如撰写评测笔记]...';
-                      setContentTypeValue(newValue); // 更新 state
-                      singleNoteForm.setFieldsValue({ contentType: newValue }); // 更新 antd form
-                      setTimeout(() => {
-                        if (contentTypeInputRef.current?.focus) {
-                          contentTypeInputRef.current.focus();
-                        } else if (contentTypeInputRef.current?.resizableTextArea?.textArea?.focus) {
-                          contentTypeInputRef.current.resizableTextArea.textArea.focus();
-                        }
-                      }, 0);
-                    }}
-                    color="purple"
-                  >
-                    <GiftOutlined /> 体验官
-                  </Tag>
-                  <Tag 
-                    style={{ cursor: 'pointer', margin: '0 4px 0 0' }}
-                    onClick={() => {
-                      const newValue = '征集关于[填写主题]的用户故事/使用心得，优秀的分享将获得[填写奖励]...';
-                      setContentTypeValue(newValue); // 更新 state
-                      singleNoteForm.setFieldsValue({ contentType: newValue }); // 更新 antd form
-                      setTimeout(() => {
-                        if (contentTypeInputRef.current?.focus) {
-                          contentTypeInputRef.current.focus();
-                        } else if (contentTypeInputRef.current?.resizableTextArea?.textArea?.focus) {
-                          contentTypeInputRef.current.resizableTextArea.textArea.focus();
-                        }
-                      }, 0);
-                    }}
-                    color="green"
-                  >
-                    <MessageOutlined /> 故事征集
-                  </Tag>
-                  <Tag 
-                    style={{ cursor: 'pointer', margin: '0 4px 0 0' }}
-                    onClick={() => {
-                      const newValue = '分享我最近发现的好物：[填写产品名称]，推荐理由是...';
-                      setContentTypeValue(newValue); // 更新 state
-                      singleNoteForm.setFieldsValue({ contentType: newValue }); // 更新 antd form
-                      setTimeout(() => {
-                        if (contentTypeInputRef.current?.focus) {
-                          contentTypeInputRef.current.focus();
-                        } else if (contentTypeInputRef.current?.resizableTextArea?.textArea?.focus) {
-                          contentTypeInputRef.current.resizableTextArea.textArea.focus();
-                        }
-                      }, 0);
-                    }}
-                    color="gold"
-                  >
-                    <ShoppingOutlined /> 好物分享
-                  </Tag>
-                  <Tag 
-                    style={{ cursor: 'pointer', margin: '0 4px 0 0' }}
-                    onClick={() => {
-                      const newValue = '科普一下关于[填写领域]的小知识：[填写知识点]...';
-                      setContentTypeValue(newValue); // 更新 state
-                      singleNoteForm.setFieldsValue({ contentType: newValue }); // 更新 antd form
-                      setTimeout(() => {
-                        if (contentTypeInputRef.current?.focus) {
-                          contentTypeInputRef.current.focus();
-                        } else if (contentTypeInputRef.current?.resizableTextArea?.textArea?.focus) {
-                          contentTypeInputRef.current.resizableTextArea.textArea.focus();
-                        }
-                      }, 0);
-                    }}
-                    color="orange"
-                  >
-                    <BulbOutlined /> 科普
-                  </Tag>
-                </div>
-              </div>
-            </div>
+            <Input.TextArea rows={4} placeholder="请输入内容诉求" />
           </Form.Item>
 
           <Form.Item
@@ -2590,28 +3104,8 @@ const PublishPlan: React.FC<PublishPlanProps> = ({
               <Radio.Button value="轻松随意">轻松随意</Radio.Button>
               <Radio.Button value="专业正式">专业正式</Radio.Button>
               <Radio.Button value="感性文艺">感性文艺</Radio.Button>
-              <Radio.Button value="自定义">自定义</Radio.Button>
+              <Radio.Button value="幽默诙谐">幽默诙谐</Radio.Button>
             </Radio.Group>
-          </Form.Item>
-          
-          {/* 添加自定义语气输入框 */}
-          <Form.Item
-            name="customTone"
-            noStyle
-            shouldUpdate={(prevValues: Record<string, any>, currentValues: Record<string, any>) => {
-              return prevValues.tone !== currentValues.tone;
-            }}
-          >
-            {({ getFieldValue }) =>
-              getFieldValue('tone') === '自定义' ? (
-                <Form.Item
-                  name="customToneText"
-                  label="自定义语气描述"
-                >
-                  <Input placeholder="请描述您想要的语气风格" />
-                </Form.Item>
-              ) : null
-            }
           </Form.Item>
         </Form>
       </Drawer>
@@ -3123,7 +3617,7 @@ const PublishPlan: React.FC<PublishPlanProps> = ({
         </div>
       </Drawer>
       <ImagePreviewModal
-        open={showImagePreview}
+        visible={showImagePreview}
         onClose={() => {
           setShowImagePreview(false);
           setSelectedImage(null);
@@ -3135,3 +3629,67 @@ const PublishPlan: React.FC<PublishPlanProps> = ({
 };
 
 export default PublishPlan;
+
+// 图片预览弹窗组件
+const ImagePreviewModal: React.FC<{
+  visible: boolean;
+  onClose: () => void;
+  image: ImageMaterial | null;
+}> = ({ visible, onClose, image }) => {
+  if (!image) return null;
+
+  return (
+    <Modal
+      title="图片详情"
+      open={visible}
+      onCancel={onClose}
+      width={800}
+      footer={null}
+    >
+      <div style={{ display: 'flex', gap: '24px' }}>
+        <div style={{ flex: 1 }}>
+          <img
+            src={image.url}
+            alt=""
+            style={{
+              width: '100%',
+              maxHeight: '400px',
+              objectFit: 'contain'
+            }}
+          />
+          <div style={{ marginTop: '16px' }}>
+            <div style={{ marginBottom: '8px' }}>
+              <span style={{ fontWeight: 'bold', marginRight: '8px' }}>创建时间：</span>
+              {dayjs(image.createTime).format('YYYY-MM-DD HH:mm:ss')}
+            </div>
+            <div>
+              <span style={{ fontWeight: 'bold', marginRight: '8px' }}>标签：</span>
+              <Space size={[0, 8]} wrap>
+                {image.tags.map(tag => (
+                  <Tag key={tag}>{tag}</Tag>
+                ))}
+              </Space>
+            </div>
+          </div>
+        </div>
+        {image.usagePlan && (
+          <div style={{ width: '300px', padding: '16px', backgroundColor: '#f7f7f7', borderRadius: '8px' }}>
+            <div style={{ fontWeight: 'bold', marginBottom: '16px' }}>使用计划</div>
+            <div style={{ marginBottom: '12px' }}>
+              <div style={{ color: '#666', fontSize: '12px' }}>计划使用时间</div>
+              <div style={{ fontSize: '14px' }}>{dayjs(image.usagePlan.date).format('YYYY-MM-DD')}</div>
+            </div>
+            <div style={{ marginBottom: '12px' }}>
+              <div style={{ color: '#666', fontSize: '12px' }}>内容标题</div>
+              <div style={{ fontSize: '14px' }}>{image.usagePlan.title}</div>
+            </div>
+            <div>
+              <div style={{ color: '#666', fontSize: '12px' }}>内容类型</div>
+              <div style={{ fontSize: '14px' }}>{image.usagePlan.contentType}</div>
+            </div>
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
+};

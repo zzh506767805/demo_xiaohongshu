@@ -1,0 +1,10 @@
+---
+description: 
+globs: *.tsx
+alwaysApply: false
+---
+
+# 开发规则
+
+- 记住自己只是在开发demo，无需包含完备的处理逻辑，只需要有简单的页面跳转以及mock数据。
+- 保持代码简洁易维护

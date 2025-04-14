@@ -11,6 +11,7 @@ body {
     'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #F7F7F7;
 }
 
 /* 滚动条样式 */
@@ -34,8 +35,8 @@ body {
 }
 
 /* antd 样式覆盖 */
-.ant-layout {
-  background: #fff !important;
+.site-layout > .ant-layout {
+  background: #F7F7F7 !important;
 }
 
 .ant-menu-inline {

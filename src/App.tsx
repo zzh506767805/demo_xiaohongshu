@@ -7,6 +7,7 @@ import PublishPlan from './pages/PublishPlan'
 import MomentManager from './pages/MomentManager'
 import ContentManager from './pages/ContentManager'
 import { UserOutlined, TeamOutlined, FileOutlined } from '@ant-design/icons'
+import Header from './components/Header'
 
 const { Content, Sider } = Layout
 
@@ -14,7 +15,12 @@ const App: React.FC = () => {
   const navigate = useNavigate()
   const [, setSiderWidth] = useState(200)
   const [isDragging, setIsDragging] = useState(false)
+  // 用于在页面间共享智能助手状态
+  const [aiAssistantVisible, setAiAssistantVisible] = useState(false)
 
+  const handleAssistantClick = () => {
+    setAiAssistantVisible(true)
+  }
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (isDragging) {
@@ -43,7 +49,7 @@ const App: React.FC = () => {
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sider
-        width={160}
+        width={120}
         style={{
           overflow: 'auto',
           height: '100vh',
@@ -51,6 +57,8 @@ const App: React.FC = () => {
           left: 0,
           top: 0,
           bottom: 0,
+          backgroundColor: '#202033',
+          zIndex: 10
         }}
       >
         <div className="logo" style={{ 
@@ -65,11 +73,12 @@ const App: React.FC = () => {
           theme="dark"
           mode="inline"
           defaultSelectedKeys={['1']}
+          style={{ backgroundColor: '#202033' }}
           items={[
             {
               key: '1',
               icon: <UserOutlined />,
-              label: '侧边栏',
+              label: '智能体',
               onClick: () => navigate('/accounts')
             },
             {
@@ -87,14 +96,24 @@ const App: React.FC = () => {
           ]}
         />
       </Sider>
-      <Layout className="site-layout" style={{ marginLeft: 160 }}>
-        <Content style={{ margin: '0 16px', overflow: 'initial' }}>
-          <div style={{ padding: 16, background: '#fff', minHeight: 'calc(100vh - 32px)' }}>
+      <Layout className="site-layout" style={{ marginLeft: 120, background: '#F7F7F7' }}>
+        <Content style={{ margin: '0', overflow: 'initial' }}>
+          <div style={{ padding: '16px 24px', minHeight: 'calc(100vh - 32px)' }}>
+            <Header onAssistantClick={handleAssistantClick} />
+            
             <Suspense fallback={<div>加载中...</div>}>
               <Routes>
                 <Route path="/" element={<Navigate to="/accounts" replace />} />
                 <Route path="/accounts" element={<AccountOverview />} />
-                <Route path="/account/:id" element={<PublishPlan />} />
+                <Route 
+                  path="/account/:id" 
+                  element={
+                    <PublishPlan 
+                      aiAssistantVisible={aiAssistantVisible} 
+                      setAiAssistantVisible={setAiAssistantVisible} 
+                    />
+                  } 
+                />
                 <Route path="/moment-manager" element={<MomentManager />} />
                 <Route path="/content-manager" element={<ContentManager />} />
               </Routes>

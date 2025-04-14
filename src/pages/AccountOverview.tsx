@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Card, Row, Col, Button, Modal, Form, Input, Select, Avatar, Statistic, Tooltip, Timeline, Tag, Calendar, Space } from 'antd';
-import { PlusOutlined, UserOutlined, RiseOutlined, QuestionCircleOutlined, SearchOutlined, EditOutlined, SendOutlined, BarChartOutlined, CalendarOutlined, RocketOutlined } from '@ant-design/icons';
+import { Card, Row, Col, Button, Modal, Form, Input, Select, Avatar, Tooltip, Timeline, Tag, Calendar, Space } from 'antd';
+import { PlusOutlined, UserOutlined, QuestionCircleOutlined, SearchOutlined, EditOutlined, SendOutlined, BarChartOutlined, CalendarOutlined, RocketOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import dayjs, { Dayjs } from 'dayjs';
 import InitializationGuide from '../components/InitializationGuide';
@@ -34,48 +34,34 @@ const mockAccounts: XHSAccount[] = [
   {
     id: '1',
     avatar: 'https://picsum.photos/100/100?random=1',
-    nickname: '时尚生活家',
-    followers: 12580,
-    posts: 326,
+    nickname: '小苍兰和它的朋友们📍成都店',
+    followers: 8307,
+    posts: 300,
     status: 'active',
     growth: {
-      followers: 580,
-      views: 125000,
-      likes: 8900,
-      saves: 3400,
+      followers: 590,
+      views: 80000,
+      likes: 5900,
+      saves: 0,
       comments: 0
     }
   },
   {
     id: '2',
     avatar: 'https://picsum.photos/100/100?random=2',
-    nickname: '美食探店达人',
-    followers: 45678,
-    posts: 892,
+    nickname: '小苍兰的员工',
+    followers: 837,
+    posts: 30,
     status: 'active',
     growth: {
-      followers: 678,
-      views: 256000,
-      likes: 15600,
-      saves: 5600,
-      comments: 0
-    }
-  },
-  {
-    id: '3',
-    avatar: 'https://picsum.photos/100/100?random=3',
-    nickname: '旅行摄影师',
-    followers: 89012,
-    posts: 567,
-    status: 'inactive',
-    growth: {
-      followers: 0,
-      views: 0,
-      likes: 0,
+      followers: 5,
+      views: 800,
+      likes: 59,
       saves: 0,
       comments: 0
     }
-  }
+  },
+  
 ];
 
 const mockWorkLogs: WorkLog[] = [
@@ -188,135 +174,353 @@ const AccountOverview: React.FC = () => {
 
   return (
     <div className="account-overview">
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
-        <img src="/Frame 427320693.png" alt="内容托管" height="30" style={{ marginRight: '12px' }} />
-        <h1 style={{ fontSize: '22px', fontWeight: 'bold', margin: 0 }}>小红书内容托管</h1>
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        marginBottom: '16px', 
+        marginTop: '24px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <img src="/Frame 427320693.png" alt="内容托管" height="40" style={{ marginRight: '12px' }} />
+          <h1 style={{ 
+            fontSize: '24px', 
+            fontWeight: '500', 
+            margin: 0, 
+            color: '#333333',
+            fontFamily: 'PingFang SC'
+          }}>小红书内容托管</h1>
+        </div>
         <Button 
           type="primary"
           icon={<RocketOutlined />}
-          style={{ marginLeft: 'auto' }}
+          style={{ 
+            marginLeft: 'auto',
+             color: '#155BD4',
+              background: 'rgba(21, 91, 212, 0.03)',
+              fontFamily: 'PingFang SC',
+              fontSize: '12px',
+              fontWeight: '400',
+              lineHeight: '1.5'
+            
+          }}
           onClick={() => setInitGuideVisible(true)}
         >
-          系统初始化
+          初始化演示
         </Button>
       </div>
       
-      <div style={{ fontSize: '14px', lineHeight: '1.6', color: '#666', marginBottom: '20px' }}>
-        我可以帮你一站式小红书账号托管，从选题规划、内容创作，到商品挂载、数据分析全流程。AI实时嗅探热点，创作原创内容，定时发布，实现账号轻松增长。
-      </div>
+      <div style={{ 
+        display: 'flex',
+        gap: '20px',
+        marginBottom: '20px'
+      }}>
+        {/* 描述部分 */}
+        <div style={{ 
+          fontSize: '14px', 
+          lineHeight: '1.6', 
+          color: '#666', 
+          padding: '16px',
+          background: '#FFFFFF',
+          borderRadius: '8px',
+          width: '436px',
+          height: '116px'
+        }}>
+          <div style={{ 
+            fontSize: '14px', 
+            color: '#333333', 
+            marginBottom: '8px',
+            fontFamily: 'PingFang SC',
+            fontWeight: '500'
+          }}>描述</div>
+          一站式小红书账号托管，从选题规划、内容创作，到商品挂载、数据分析全流程。AI实时嗅探热点，创作原创内容，定时发...
+        </div>
 
-      <div style={{ marginBottom: '20px', backgroundColor: '#f7f7f7', padding: '16px', borderRadius: '8px' }}>
-        <Row gutter={[24, 16]}>
-          <Col span={6}>
-            <Card bordered={false}>
-              <Statistic
-                title="已托管账号"
-                value={mockAccounts.length}
-                valueStyle={{ color: '#000000' }}
-              />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card bordered={false}>
-              <Statistic
-                title="总粉丝增长"
-                value={mockAccounts.reduce((sum, account) => sum + account.growth.followers, 0)}
-                valueStyle={{ color: '#000000' }}
-                prefix={<RiseOutlined />}
-              />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card bordered={false}>
-              <Statistic
-                title="总阅读量"
-                value={mockAccounts.reduce((sum, account) => sum + account.growth.views, 0)}
-              />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card bordered={false}>
-              <Statistic
-                title="总互动量"
-                value={mockAccounts.reduce((sum, account) => sum + account.growth.likes + account.growth.comments, 0)}
-              />
-            </Card>
-          </Col>
-        </Row>
+        {/* 数据统计部分 */}
+        <div style={{ 
+          padding: '30px 40px', 
+          background: '#FFFFFF', 
+          borderRadius: '8px',
+          width: '840px',
+          height: '116px',
+          display: 'flex',
+          alignItems: 'center'
+        }}>
+          <Row gutter={[56, 16]} style={{ width: '100%' }}>
+            <Col span={6}>
+              <div>
+                <div style={{ 
+                  fontSize: '14px', 
+                  color: '#999999', 
+                  marginBottom: '8px',
+                  fontFamily: 'PingFang SC',
+                  lineHeight: '1.7',
+                  fontWeight: '400'
+                }}>已托管账号</div>
+                <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                  <span style={{ 
+                    fontSize: '24px', 
+                    fontWeight: '500', 
+                    color: '#333333',
+                    fontFamily: 'Avenir',
+                    lineHeight: '1'
+                  }}>3</span>
+                  <span style={{ 
+                    marginLeft: '4px', 
+                    color: '#999999',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    fontFamily: 'PingFang SC',
+                    lineHeight: '1.43'
+                  }}>个</span>
+                </div>
+              </div>
+            </Col>
+            <Col span={6}>
+              <div>
+                <div style={{ 
+                  fontSize: '14px', 
+                  color: '#999999', 
+                  marginBottom: '8px',
+                  fontFamily: 'PingFang SC',
+                  lineHeight: '1.7',
+                  fontWeight: '400'
+                }}>总粉丝增长</div>
+                <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                  <span style={{ 
+                    fontSize: '24px', 
+                    fontWeight: '500', 
+                    color: '#333333',
+                    fontFamily: 'Avenir',
+                    lineHeight: '1'
+                  }}>3,000</span>
+                  <span style={{ 
+                    marginLeft: '4px', 
+                    color: '#999999',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    fontFamily: 'PingFang SC',
+                    lineHeight: '1.43'
+                  }}>人</span>
+                </div>
+              </div>
+            </Col>
+            <Col span={6}>
+              <div>
+                <div style={{ 
+                  fontSize: '14px', 
+                  color: '#999999', 
+                  marginBottom: '8px',
+                  fontFamily: 'PingFang SC',
+                  lineHeight: '1.7',
+                  fontWeight: '400'
+                }}>总阅读量</div>
+                <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                  <span style={{ 
+                    fontSize: '24px', 
+                    fontWeight: '500', 
+                    color: '#333333',
+                    fontFamily: 'Avenir',
+                    lineHeight: '1'
+                  }}>281,000</span>
+                  <span style={{ 
+                    marginLeft: '4px', 
+                    color: '#999999',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    fontFamily: 'PingFang SC',
+                    lineHeight: '1.43'
+                  }}>次</span>
+                </div>
+              </div>
+            </Col>
+            <Col span={6}>
+              <div>
+                <div style={{ 
+                  fontSize: '14px', 
+                  color: '#999999', 
+                  marginBottom: '8px',
+                  fontFamily: 'PingFang SC',
+                  lineHeight: '1.7',
+                  fontWeight: '400'
+                }}>总互动量</div>
+                <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                  <span style={{ 
+                    fontSize: '24px', 
+                    fontWeight: '500', 
+                    color: '#333333',
+                    fontFamily: 'Avenir',
+                    lineHeight: '1'
+                  }}>4,500</span>
+                  <span style={{ 
+                    marginLeft: '4px', 
+                    color: '#999999',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    fontFamily: 'PingFang SC',
+                    lineHeight: '1.43'
+                  }}>次</span>
+                </div>
+              </div>
+            </Col>
+          </Row>
+        </div>
       </div>
 
       <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2 style={{ margin: 0, fontSize: '18px' }}>已托管账号</h2>
+        <h2 style={{ 
+          margin: 0, 
+          fontSize: '16px', 
+          fontWeight: '500', 
+          color: '#333333',
+          fontFamily: 'PingFang SC',
+          lineHeight: '1.5'
+        }}>账号管理</h2>
         <Space>
-          <Button icon={<CalendarOutlined />} onClick={() => setCalendarVisible(true)}>
+          <Button 
+            icon={<CalendarOutlined />} 
+            onClick={() => setCalendarVisible(true)}
+            style={{
+              color: '#155BD4',
+              background: 'rgba(21, 91, 212, 0.03)',
+              fontFamily: 'PingFang SC',
+              fontSize: '12px',
+              fontWeight: '400',
+              lineHeight: '1.5'
+            }}
+          >
             查看日历
           </Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddAccountVisible(true)}>
-            添加账号
-          </Button>
+          
         </Space>
       </div>
 
-      <Row gutter={[24, 24]}>
+      <Row gutter={[20, 20]}>
         {mockAccounts.map(account => (
           <Col span={8} key={account.id}>
             <Card
               hoverable
-              style={{ height: '100%' }}
+              style={{ 
+                height: '100%', 
+                border: '1px solid #EEEEEE',
+                borderRadius: '8px'
+              }}
+              bodyStyle={{ padding: '20px' }}
               onClick={() => navigate(`/account/${account.id}`)}
             >
               <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
-                <Avatar size={64} src={account.avatar} />
+                <Avatar size={64} src={account.avatar} style={{ borderRadius: '100px' }} />
                 <div>
-                  <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '4px' }}>
+                  <div style={{ 
+                    fontSize: '14px', 
+                    fontWeight: '500', 
+                    marginBottom: '4px', 
+                    color: '#333333',
+                    fontFamily: 'PingFang SC',
+                    lineHeight: '1.4'
+                  }}>
                     {account.nickname}
                   </div>
-                  <div style={{ color: '#666' }}>
-                    {account.followers.toLocaleString()} 粉丝 · {account.posts} 笔记
+                  <div style={{ 
+                    color: '#999999', 
+                    fontSize: '12px',
+                    fontFamily: 'PingFang SC',
+                    lineHeight: '1.5'
+                  }}>
+                    {account.id === '1' && (
+                      <span style={{ marginRight: '4px' }}>
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <circle cx="8" cy="8" r="8" fill="#5E91DD" />
+                          <path d="M5 8L7 10L11 6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        企业号｜
+                      </span>
+                    )}
+                    {account.followers.toLocaleString()} 粉丝｜{account.posts} 笔记
                   </div>
                 </div>
               </div>
 
-              <Row gutter={[16, 16]}>
-                <Col span={12}>
-                  <Statistic
-                    title="本周涨粉"
-                    value={account.growth?.followers || 0}
-                    valueStyle={{ color: '#3f8600', fontSize: '16px' }}
-                    prefix={<RiseOutlined />}
-                  />
-                </Col>
-                <Col span={12}>
-                  <Statistic
-                    title="本周阅读"
-                    value={account.growth?.views || 0}
-                    valueStyle={{ fontSize: '16px' }}
-                  />
-                </Col>
-                <Col span={12}>
-                  <Statistic
-                    title="本周互动"
-                    value={(account.growth?.likes || 0) + (account.growth?.comments || 0)}
-                    valueStyle={{ fontSize: '16px' }}
-                  />
-                </Col>
-                <Col span={12}>
-                  <Statistic
-                    title={
-                      <span>
-                        本周GMV 
-                        <Tooltip title="通过小红书笔记进入到小程序店铺并成交的金额">
-                          <QuestionCircleOutlined style={{ marginLeft: '4px' }} />
-                        </Tooltip>
-                      </span>
-                    }
-                    value={Math.floor(Math.random() * 100000)}
-                    prefix="¥"
-                    valueStyle={{ fontSize: '16px' }}
-                  />
-                </Col>
-              </Row>
-              <div style={{ marginTop: '16px', textAlign: 'right' }}>
+              <div style={{ 
+                display: 'flex', 
+                flexWrap: 'wrap', 
+                gap: '32px', 
+                marginBottom: '16px' 
+              }}>
+                <div style={{ width: '116px' }}>
+                  <div style={{ 
+                    fontSize: '12px', 
+                    color: '#999999', 
+                    marginBottom: '4px',
+                    fontFamily: 'PingFang SC',
+                    lineHeight: '1.5'
+                  }}>本周涨粉</div>
+                  <div style={{ 
+                    fontSize: '18px', 
+                    fontWeight: '500', 
+                    color: '#333333',
+                    fontFamily: 'Avenir'
+                  }}>
+                    {account.growth?.followers || 0}
+                  </div>
+                </div>
+                <div style={{ width: '116px' }}>
+                  <div style={{ 
+                    fontSize: '12px', 
+                    color: '#999999', 
+                    marginBottom: '4px',
+                    fontFamily: 'PingFang SC',
+                    lineHeight: '1.5'
+                  }}>本周阅读</div>
+                  <div style={{ 
+                    fontSize: '18px', 
+                    fontWeight: '500', 
+                    color: '#333333',
+                    fontFamily: 'Avenir'
+                  }}>
+                    {account.growth?.views || 0}
+                  </div>
+                </div>
+                <div style={{ width: '116px' }}>
+                  <div style={{ 
+                    fontSize: '12px', 
+                    color: '#999999', 
+                    marginBottom: '4px',
+                    fontFamily: 'PingFang SC',
+                    lineHeight: '1.5'
+                  }}>本周互动</div>
+                  <div style={{ 
+                    fontSize: '18px', 
+                    fontWeight: '500', 
+                    color: '#333333',
+                    fontFamily: 'Avenir'
+                  }}>
+                    {(account.growth?.likes || 0) + (account.growth?.comments || 0)}
+                  </div>
+                </div>
+                <div style={{ width: '116px' }}>
+                  <div style={{ 
+                    fontSize: '12px', 
+                    color: '#999999', 
+                    marginBottom: '4px',
+                    fontFamily: 'PingFang SC',
+                    lineHeight: '1.5'
+                  }}>
+                    本周GMV
+                    <Tooltip title="通过小红书笔记进入到小程序店铺并成交的金额">
+                      <QuestionCircleOutlined style={{ marginLeft: '4px' }} />
+                    </Tooltip>
+                  </div>
+                  <div style={{ 
+                    fontSize: '18px', 
+                    fontWeight: '500', 
+                    color: '#333333',
+                    fontFamily: 'Avenir'
+                  }}>
+                    {account.id === '1' ? '1,888,888' : account.id === '2' ? '188' : Math.floor(Math.random() * 100000)}
+                  </div>
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
                 <Button 
                   type="link" 
                   onClick={(e) => {
@@ -331,14 +535,44 @@ const AccountOverview: React.FC = () => {
             </Card>
           </Col>
         ))}
+        <Col span={8}>
+          <Card
+            hoverable
+            style={{ 
+              height: '100%', 
+              border: '1px dashed #EEEEEE',
+              borderRadius: '8px',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              cursor: 'pointer'
+            }}
+            bodyStyle={{ 
+              padding: '20px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '100%'
+            }}
+            onClick={() => setAddAccountVisible(true)}
+          >
+            <PlusOutlined style={{ fontSize: '24px', color: '#999999', marginBottom: '8px' }} />
+            <div style={{ 
+              color: '#999999', 
+              fontSize: '14px',
+              fontFamily: 'PingFang SC'
+            }}>添加账号</div>
+          </Card>
+        </Col>
       </Row>
 
       <div style={{ marginTop: '40px', marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h2 style={{ margin: 0, fontSize: '18px' }}>智能体工作记录</h2>
+          <h2 style={{ margin: 0, fontSize: '16px', fontWeight: '500', color: '#333333' }}>智能体工作记录</h2>
         </div>
 
-        <div style={{ backgroundColor: '#f7f7f7', padding: '16px', borderRadius: '8px' }}>
+        <div style={{ padding: '16px', borderRadius: '8px', background: '#FFFFFF' }}>
           <Timeline>
             {filteredWorkLogs.map(log => (
               <Timeline.Item 
@@ -357,7 +591,7 @@ const AccountOverview: React.FC = () => {
                 }
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <span style={{ fontWeight: 'bold' }}>
+                  <span style={{ fontWeight: 'bold', color: '#333333' }}>
                     [{log.type}] {log.content}
                   </span>
                   <span style={{ color: '#999', fontSize: '13px' }}>{log.timestamp}</span>
