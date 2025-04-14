@@ -2048,7 +2048,7 @@ const PublishPlan: React.FC<PublishPlanProps> = ({
 
   return (
     <div className="publish-plan-container">
-      <div style={{ marginBottom: '24px', marginTop: '24px' }}>
+      <div style={{ marginBottom: '6px', marginTop: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <Avatar size={64} src={currentAccount?.avatar} />
