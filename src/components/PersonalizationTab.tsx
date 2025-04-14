@@ -93,7 +93,7 @@ const PersonalizationTab: React.FC<PersonalizationTabProps> = () => {
       <Card
         title={
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={titleStyle}>热文列表</div>
+            <div style={titleStyle}>范文列表</div>
             <Button
               type="primary"
               icon={<PlusOutlined />}

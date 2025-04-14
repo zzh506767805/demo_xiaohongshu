@@ -1,48 +1,15 @@
 import React, { useState } from 'react';
-import { Card, Row, Col, List, Button, Avatar, Alert, Space } from 'antd';
+import { Card, Row, Col, Button } from 'antd';
 import { 
   WarningOutlined, ArrowUpOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
-
-interface XHSAccount {
-  id: string;
-  avatar: string;
-  nickname: string;
-  followers: number;
-  posts: number;
-  status: 'active' | 'inactive';
-  growth: {
-    followers: number;
-    views: number;
-    likes: number;
-    comments: number;
-    saves: number;
-  };
-}
-
 interface OverviewTabProps {
-  account?: XHSAccount;
   setCalendarVisible: (visible: boolean) => void;
 }
 
-const OverviewTab: React.FC<OverviewTabProps> = ({ account = {
-  id: '',
-  avatar: '',
-  nickname: '',
-  followers: 0,
-  posts: 0,
-  status: 'active',
-  growth: {
-    followers: 0,
-    views: 0,
-    likes: 0,
-    comments: 0,
-    saves: 0
-  },
-  recentPosts: []
-}, setCalendarVisible }) => {
+const OverviewTab: React.FC<OverviewTabProps> = ({ setCalendarVisible }) => {
   const [showAllReviewContent, setShowAllReviewContent] = useState(false);
 
   const titleStyle = {

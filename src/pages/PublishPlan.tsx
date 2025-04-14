@@ -2076,7 +2076,6 @@ const PublishPlan: React.FC<PublishPlanProps> = ({
             label: '概览',
             children: (
               <OverviewTab 
-                account={currentAccount}
                 setCalendarVisible={setCalendarVisible}
               />
             )
